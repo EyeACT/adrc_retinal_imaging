@@ -59,10 +59,20 @@ def main():
     Main function to parse command-line arguments and run the Spectralis processing pipeline.
     """
     # Example paths - replace with your actual paths or use command-line arguments
-    home_folder = os.path.expanduser("~")
-    download_data_folder = os.path.join(home_folder, "Downloads", "sample_data")
-    input_folder = os.path.join(download_data_folder, "spectralis", "input")
-    output_folder = os.path.join(download_data_folder, "spectralis", "output")
+    # download_folder = os.path.join(os.path.expanduser("~"), "Downloads")
+    # input_folder = os.path.join(download_folder, "year3+raw", "spectralis")
+    # output_folder = os.path.join(download_folder, "year3+processed", "spectralis")
+
+    drive_folder = "D:\\"
+    input_folder = os.path.join(drive_folder, "year3+raw", "spectralis")
+    output_folder = os.path.join(drive_folder, "year3+processed", "spectralis")
+
+    # delete the output_folder if it exists
+    if os.path.exists(output_folder):
+        shutil.rmtree(output_folder)
+
+    os.makedirs(output_folder)
+
     # 1. --- Argument Parsing ---
     # This section sets up how the script receives instructions from the command line.
     # parser = argparse.ArgumentParser(

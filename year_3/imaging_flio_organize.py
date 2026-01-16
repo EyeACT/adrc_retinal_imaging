@@ -54,6 +54,8 @@ def filter_flio_files_process(input, output):
 
             else:
                 print("else")
+                print(f"missing file: {folder_path}")
+                print(f"input folder: {input}")
 
                 dic = {
                     "Input batch folder": input,

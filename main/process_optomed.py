@@ -59,17 +59,15 @@ def main():
     Main function to parse command-line arguments and run the Optomed processing pipeline.
     """
     # Example paths - replace with your actual paths or use command-line arguments
-    home_folder = os.path.expanduser("~")
-    download_data_folder = os.path.join(home_folder, "Downloads", "sample_data")
-    input_folder = os.path.join(download_data_folder, "optomed", "input")
-    output_folder = os.path.join(download_data_folder, "optomed", "output")
+    download_folder = os.path.join(os.path.expanduser("~"), "Downloads")
+    input_folder = os.path.join(download_folder, "year3+raw", "optomed")
+    output_folder = os.path.join(download_folder, "year3+processed", "optomed")
 
-    ## delete the output_folder if it exists
+    # delete the output_folder if it exists
     if os.path.exists(output_folder):
         shutil.rmtree(output_folder)
-        os.makedirs(output_folder)
-    else:
-        os.makedirs(output_folder)
+
+    os.makedirs(output_folder)
 
     # 1. --- Argument Parsing ---
     # This section sets up how the script receives instructions from the command line.
