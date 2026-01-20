@@ -59,13 +59,13 @@ def main():
     Main function to parse command-line arguments and run the Spectralis processing pipeline.
     """
     # Example paths - replace with your actual paths or use command-line arguments
-    download_folder = os.path.join(os.path.expanduser("~"), "Downloads")
-    input_folder = os.path.join(download_folder, "year3+raw", "spectralis")
-    output_folder = os.path.join(download_folder, "year3+processed", "spectralis")
+    # download_folder = os.path.join(os.path.expanduser("~"), "Downloads")
+    # input_folder = os.path.join(download_folder, "year3+raw", "spectralis")
+    # output_folder = os.path.join(download_folder, "year3+processed", "spectralis")
 
-    # drive_folder = "D:\\"
-    # input_folder = os.path.join(drive_folder, "year3+raw", "spectralis")
-    # output_folder = os.path.join(drive_folder, "year3+processed", "spectralis")
+    drive_folder = "D:\\"
+    input_folder = os.path.join(drive_folder, "year3+raw", "spectralis")
+    output_folder = os.path.join(drive_folder, "year3+processed", "spectralis")
 
     # delete the output_folder if it exists
     if os.path.exists(output_folder):
