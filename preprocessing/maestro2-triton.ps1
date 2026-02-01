@@ -1,12 +1,7 @@
 # $DICOM_OCT_EXPORT_EXE = "G:\OCT_v2\FdaFileParser\exe\DicomOctExport.exe"
 $DICOM_OCT_EXPORT_EXE = "C:\Users\sanjay\Downloads\OCT_v2\FdaFileParser\exe\DicomOctExport.exe"
-$BaseRoot = "D:\sample_data\maestro2\pre_input_before_commandline"
-$GlobalOutputRoot = "D:\sample_data\maestro2\input"
-
-# Delete the output folder if it exists
-if (Test-Path $GlobalOutputRoot) {
-    Remove-Item -Path $GlobalOutputRoot -Recurse -Force
-}
+$BaseRoot = "D:\year3+raw\maestro2"
+$GlobalOutputRoot = "D:\year3+pre\maestro2"
 
 # Ensure global output root exists
 if (-not (Test-Path $GlobalOutputRoot)) {
