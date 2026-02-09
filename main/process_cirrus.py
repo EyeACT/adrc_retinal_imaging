@@ -96,10 +96,15 @@ def main():
     Main function to parse command-line arguments and run the Cirrus processing pipeline.
     """
     #
-    home_folder = os.path.expanduser("~")
-    download_data_folder = os.path.join(home_folder, "Downloads", "sample_data")
-    input_folder = os.path.join(download_data_folder, "cirrus", "input")
-    output_folder = os.path.join(download_data_folder, "cirrus", "output")
+    # home_folder = os.path.expanduser("~")
+    # download_data_folder = os.path.join(home_folder, "Downloads", "sample_data")
+    # input_folder = os.path.join(download_data_folder, "cirrus", "input")
+    # output_folder = os.path.join(download_data_folder, "cirrus", "output")
+
+    drive_folder = "G:\\"
+    input_folder = os.path.join(drive_folder, "year3+raw", "cirrus")
+    output_folder = os.path.join(drive_folder, "year3+processed", "cirrus")
+
     # 1. --- Argument Parsing ---
     # This section sets up how the script receives instructions from the command line.
     # parser = argparse.ArgumentParser(
