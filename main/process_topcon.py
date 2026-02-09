@@ -97,10 +97,10 @@ def main():
     home_folder = os.path.expanduser("~")
     download_data_folder = os.path.join(home_folder, "Downloads", "year3+pre")
     output_data_folder = os.path.join(home_folder, "Downloads", "year3+processed")
-    input_triton_folder = os.path.join(download_data_folder, "triton", "input")
-    output_triton_folder = os.path.join(output_data_folder, "triton", "output")
-    input_maestro2_folder = os.path.join(download_data_folder, "maestro2", "input")
-    output_maestro2_folder = os.path.join(output_data_folder, "maestro2", "output")
+    input_triton_folder = os.path.join(download_data_folder, "triton")
+    output_triton_folder = os.path.join(output_data_folder, "triton")
+    input_maestro2_folder = os.path.join(download_data_folder, "maestro2")
+    output_maestro2_folder = os.path.join(output_data_folder, "maestro2")
 
     # drive_folder = "G:\\"
     # input_triton_folder = os.path.join(drive_folder, "year3+raw", "triton")

@@ -1,1 +1,4 @@
-year_3/__pycache__
+year_3/__pycache__/
+.venv/
+__pycache__/
+*.pyc
