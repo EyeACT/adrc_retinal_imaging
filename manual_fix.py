@@ -108,7 +108,7 @@ def fix_maestro2():
         if not os.path.exists(folder_path):
             print(f"Folder {folder_path} does not exist")
             continue
-        dcm_files = [f for f in os.listdir(folder_path) if f.endswith(".fda")]
+        dcm_files = [f for f in os.listdir(folder_path) if f.endswith(".dcm")]
         for dcm_file in dcm_files:
             dcm_file_path = os.path.join(folder_path, dcm_file)
             fixed_dcm_file_path = os.path.join(fixed_folder_path, folder_name, dcm_file)
@@ -132,7 +132,7 @@ def fix_maestro2():
         if not os.path.exists(folder_path):
             print(f"Folder {folder_path} does not exist")
             continue
-        dcm_files = [f for f in os.listdir(folder_path) if f.endswith(".fda")]
+        dcm_files = [f for f in os.listdir(folder_path) if f.endswith(".dcm")]
         for dcm_file in dcm_files:
             dcm_file_path = os.path.join(folder_path, dcm_file)
             fixed_dcm_file_path = os.path.join(fixed_folder_path, folder_name, dcm_file)
@@ -157,7 +157,7 @@ def fix_maestro2():
         if not os.path.exists(folder_path):
             print(f"Folder {folder_path} does not exist")
             continue
-        dcm_files = [f for f in os.listdir(folder_path) if f.endswith(".fda")]
+        dcm_files = [f for f in os.listdir(folder_path) if f.endswith(".dcm")]
         for dcm_file in dcm_files:
             dcm_file_path = os.path.join(folder_path, dcm_file)
             fixed_dcm_file_path = os.path.join(fixed_folder_path, folder_name, dcm_file)
@@ -169,5 +169,5 @@ def fix_maestro2():
 
 
 if __name__ == "__main__":
-    fix_triton()
+    # fix_triton()
     fix_maestro2()
