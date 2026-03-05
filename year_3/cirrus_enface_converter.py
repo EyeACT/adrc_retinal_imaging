@@ -363,7 +363,8 @@ def extract_dicom_dict(file, tags):
 
     dataset = pydicom.dcmread(file)
     dataset.PatientOrientation = ["L", "F"]
-    dataset.ImageOrientationPatient = [-1.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+    dataset.ImageOrientationPatient = ""
+    dataset.PixelSpacing = [0.005859375, 0.005859375]
 
     header_elements = {
         "00020000": {
