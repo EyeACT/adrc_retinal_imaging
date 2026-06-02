@@ -878,8 +878,8 @@ def convert_dicom(inputseg, inputoct, inputop, output):
 
     z = extract_dicom_dict(inputop, ["0020000E", "00080016", "00080018"])
 
-    filename = inputseg.split("/")[-1]
+    filename = os.path.basename(inputseg)
 
     write_dicom(
-        conversion_rule, x, y, z, inputseg, inputoct, f"{output}/converted_{filename}"
+        conversion_rule, x, y, z, inputseg, inputoct, os.path.join(output, f"converted_{filename}")
     )

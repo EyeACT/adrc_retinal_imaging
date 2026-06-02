@@ -29,7 +29,6 @@ irf_data = [
 ]
 
 
-
 def get_all_file_names(folder_path):
     """
     Get all file names in a specified folder, including subdirectories.
@@ -424,7 +423,7 @@ def short_add_html_sdt_info(dataset, sdt, dicom_info, output):
         dicom_info["ShortWavelengthInvalidPhotonsPerFrame"],
     )
 
-###
+    ###
     flio_sn_input = str(dicom_info["cam_sn"])
     record = next((item for item in irf_data if item["flio_sn"] == flio_sn_input), None)
     short_irf = record["short_irf"]
@@ -434,7 +433,7 @@ def short_add_html_sdt_info(dataset, sdt, dicom_info, output):
         str(short_irf),
     )
 
-###
+    ###
 
     # Adding FLIO SDT information
     r = flio_reader.dump_metadata(sdt)
@@ -544,8 +543,8 @@ def long_add_html_sdt_info(dataset, sdt, dicom_info, output):
         "LO",
         str(long_irf),
     )
-    
-###
+
+    ###
 
     # Adding FLIO SDT information
     r = flio_reader.dump_metadata(sdt)
@@ -637,29 +636,32 @@ def make_flio_dicom(folder_path, output, json_path):
             laterality = dicom_info["Laterality"].lower()
 
             # Define output file paths
-            short_output_path = f"{output}/{patientid}_flio_short_wavelength_{laterality}_{uid_short}.dcm"
-            long_output_path = (
-                f"{output}/{patientid}_flio_long_wavelength_{laterality}_{uid_long}.dcm"
+            short_output_path = os.path.join(
+                output,
+                f"{patientid}_flio_short_wavelength_{laterality}_{uid_short}.dcm",
+            )
+            long_output_path = os.path.join(
+                output, f"{patientid}_flio_long_wavelength_{laterality}_{uid_long}.dcm"
             )
 
             # Process short wavelength
             try:
                 short_add_html_sdt_info(a, inputsdt, dicom_info, short_output_path)
-                short_status = "complete", short_output_path.split("/")[-1]
+                short_status = "complete", os.path.basename(short_output_path)
             except Exception as e:
                 short_status = f"error: {e}"
 
             # Process long wavelength
             try:
                 long_add_html_sdt_info(b, inputsdt, dicom_info, long_output_path)
-                long_status = "complete", long_output_path.split("/")[-1]
+                long_status = "complete", os.path.basename(long_output_path)
             except Exception as e:
                 long_status = f"error: {e}"
 
             # Create and print the dictionary with completion status
             dic = {
-                "Input SDT": inputsdt.split("/")[-2:],
-                "Input HTML": inputhtml.split("/")[-2:],
+                "Input SDT": os.path.split(inputsdt)[-2:],
+                "Input HTML": os.path.split(inputhtml)[-2:],
                 "Short wavelength conversion": short_status,
                 "Long wavelength conversion": long_status,
             }
@@ -1307,7 +1309,7 @@ def write_dicom(protocol, dicom_dict_list, file_path, input):
     for tag, VR, value in extracted_tags:
         add_tag(dataset, tag, VR, value)
 
-    dataset.save_as(file_path,  write_like_original=False)
+    dataset.save_as(file_path, write_like_original=False)
 
 
 def convert_dicom(input, output):
@@ -1331,14 +1333,16 @@ def convert_dicom(input, output):
     )
     x = extract_dicom_dict(input, tags)
 
-    filename = input.split("/")[-1]
+    filename = os.path.basename(input)
 
     try:
         # Attempt to write the converted DICOM file
-        write_dicom(conversion_rule, x, f"{output}/converted_{filename}", input)
+        write_dicom(
+            conversion_rule, x, os.path.join(output, f"converted_{filename}"), input
+        )
 
         dic = {
-            "Input": input.split("/")[-1],
+            "Input": os.path.basename(input),
             "Output": f"converted_{filename}",
             "Error": "None",
         }
@@ -1347,7 +1351,7 @@ def convert_dicom(input, output):
 
     except Exception as e:
         dic = {
-            "Input": input.split("/")[-1],
+            "Input": os.path.basename(input),
             "Output": f"converted_{filename}",
             "Error": f"error: {e}",
         }

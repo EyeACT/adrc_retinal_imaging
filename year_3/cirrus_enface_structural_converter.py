@@ -593,7 +593,7 @@ def convert_dicom(
     opt = extract_dicom_dict(inputopt, ["0020000D", "0020000E", "00080016", "00080018"])
     op = extract_dicom_dict(inputop, ["0020000D", "0020000E", "00080016", "00080018"])
 
-    filename = inputenface.split("/")[-1]
+    filename = os.path.basename(inputenface)
 
     write_dicom(
         conversion_rule,
@@ -603,5 +603,5 @@ def convert_dicom(
         op,
         inputopt,
         inputop,
-        f"{output}/converted_{filename}",
+        os.path.join(output, f"converted_{filename}"),
     )

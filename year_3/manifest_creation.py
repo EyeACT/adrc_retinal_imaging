@@ -8,7 +8,7 @@ import pandas as pd
 import pydicom
 from tqdm import tqdm
 
-sys.path.append("/Users/nayoonkim/pipeline_imaging/a_year3/year_3")
+# sys.path.append("/Users/nayoonkim/pipeline_imaging/a_year3/year_3")  # Commented out - hardcoded path
 
 import imaging_cirrus_metadata
 import imaging_eidon_retinal_photography_metadata
@@ -50,6 +50,7 @@ def get_json_filenames(folder_path):
                 json_files.append(full_path)
 
     return json_files
+
 
 # Function to read JSON file and get the 'file_path'
 def get_item_from_json(file_path, item):
@@ -93,12 +94,11 @@ def process_enface(file):
     }
 
 
-
 def process_cirrus_file(file, imaging_folder, metadata_folder):
 
-    files = get_json_filenames(f"{metadata_folder}/retinal_octa")
-    op = f"{imaging_folder}/retinal_photography/manifest.tsv"
-    opt = f"{imaging_folder}/retinal_oct/manifest.tsv"
+    files = get_json_filenames(os.path.join(metadata_folder, "retinal_octa"))
+    op = os.path.join(imaging_folder, "retinal_photography", "manifest.tsv")
+    opt = os.path.join(imaging_folder, "retinal_oct", "manifest.tsv")
     input_op_df = pd.read_csv(op, sep="\t")
     input_opt_df = pd.read_csv(opt, sep="\t")
 
@@ -330,13 +330,13 @@ def process_cirrus_file(file, imaging_folder, metadata_folder):
         df_filtered = df[columns_to_keep]
 
         return df_filtered
-    
+
+
 def process_topcon_file(seg, imaging_folder, metadata_folder):
 
-
-    files = get_json_filenames(f"{metadata_folder}/retinal_octa")
-    op = f"{imaging_folder}/retinal_photography/manifest.tsv"
-    opt = f"{imaging_folder}/retinal_oct/manifest.tsv"
+    files = get_json_filenames(os.path.join(metadata_folder, "retinal_octa"))
+    op = os.path.join(imaging_folder, "retinal_photography", "manifest.tsv")
+    opt = os.path.join(imaging_folder, "retinal_oct", "manifest.tsv")
     input_op_df = pd.read_csv(op, sep="\t")
     input_opt_df = pd.read_csv(opt, sep="\t")
 
@@ -346,10 +346,9 @@ def process_topcon_file(seg, imaging_folder, metadata_folder):
         df = pd.DataFrame(flattened_data)
 
         seg_uid = str(df["sop_instance_uid"].iloc[0])
-        op_uid =  ".".join(seg_uid.split(".")[:-2] + ["2", "1"])
+        op_uid = ".".join(seg_uid.split(".")[:-2] + ["2", "1"])
         opt_uid = ".".join(seg_uid.split(".")[:-2] + ["1", "1"])
         vol_uid = ".".join(seg_uid.split(".")[:-2] + ["3", "1"])
-
 
         df.loc[:, "associated_flow_cube_sop_instance_uid"] = vol_uid
         df.loc[:, "associated_segmentation_sop_instance_uid"] = seg_uid
@@ -358,21 +357,23 @@ def process_topcon_file(seg, imaging_folder, metadata_folder):
 
         # op_filepath = input_op_df.set_index("sop_instance_uid").loc[op_uid, "filepath"]
         try:
-            op_filepath = (
-                input_op_df.set_index("sop_instance_uid")
-                .loc[op_uid, "filepath"]
-            )
+            op_filepath = input_op_df.set_index("sop_instance_uid").loc[
+                op_uid, "filepath"
+            ]
         except KeyError:
             op_filepath = "Not Provided"
             print(f"{op_uid} unavailable")
 
-        opt_filepath = input_opt_df.set_index("sop_instance_uid").loc[opt_uid, "filepath"]
-        opt_anatomic_region = input_opt_df.set_index("sop_instance_uid").loc[opt_uid, "anatomic_region"]
+        opt_filepath = input_opt_df.set_index("sop_instance_uid").loc[
+            opt_uid, "filepath"
+        ]
+        opt_anatomic_region = input_opt_df.set_index("sop_instance_uid").loc[
+            opt_uid, "anatomic_region"
+        ]
 
         df.loc[:, "associated_retinal_photography_file_path"] = op_filepath
         df.loc[:, "associated_structural_oct_file_path"] = opt_filepath
         df.loc[:, "anatomic_region"] = opt_anatomic_region.capitalize()
-
 
         # seg
         seg_file = find_matching_json_files(seg_uid, "segmentation", files)
@@ -602,7 +603,8 @@ def process_topcon_file(seg, imaging_folder, metadata_folder):
         df_filtered = df[columns_to_keep]
 
         return df_filtered
-    
+
+
 import math
 import re
 
@@ -618,7 +620,7 @@ def split_list(lst, n):
 
 
 def process_sublist(sublist, sublist_index, imaging_folder):
-    metadata_folder = f"{imaging_folder}_metadata"
+    metadata_folder = f"{imaging_folder}_metadata"  # This is a suffix, not a path join
     df_combined = pd.DataFrame()
 
     # Process each file in the sublist
@@ -634,11 +636,12 @@ def process_sublist(sublist, sublist_index, imaging_folder):
 
     # Save the result as a TSV file
     df_combined.to_csv(
-        f"{imaging_folder}/retinal_octa/manifest_{sublist_index}.tsv",
+        os.path.join(imaging_folder, "retinal_octa", f"manifest_{sublist_index}.tsv"),
         sep="\t",
         index=False,
     )
     return f"Sublist {sublist_index} processed and saved."
+
 
 import glob
 
@@ -646,9 +649,9 @@ import pandas as pd
 
 
 def octa_manifest(imaging_folder):
-    metadata_folder = f"{imaging_folder}_metadata"
+    metadata_folder = f"{imaging_folder}_metadata"  # This is a suffix, not a path join
 
-    files = get_json_filenames(f"{metadata_folder}/retinal_octa")
+    files = get_json_filenames(os.path.join(metadata_folder, "retinal_octa"))
     print(len(files))
 
     retinal_octa = "retinal_octa"
@@ -664,7 +667,6 @@ def octa_manifest(imaging_folder):
     topcon_filtered_files = [
         f for f in files if re.search(topcon_pattern, f, re.IGNORECASE)
     ]
-
 
     # Merge the two filtered lists
     merged_files = cirrus_filtered_files + topcon_filtered_files
@@ -682,7 +684,9 @@ def octa_manifest(imaging_folder):
         delayed(process_sublist)(sublist, sublist_index, imaging_folder)
         for sublist_index, sublist in enumerate(merged_split_lists)
     )
-    all_files = glob.glob(f"{imaging_folder}/retinal_octa/manifest_*.tsv")
+    all_files = glob.glob(
+        os.path.join(imaging_folder, "retinal_octa", "manifest_*.tsv")
+    )
     df_list = [pd.read_csv(file, sep="\t") for file in all_files]
     final_df = pd.concat(df_list, ignore_index=True)
 
@@ -692,7 +696,7 @@ def octa_manifest(imaging_folder):
     col_to_insert_after = "associated_segmentation_file_path"
 
     # Find the insertion index (position after the given column)
-    insert_idx =  final_df.columns.get_loc(col_to_insert_after) + 1
+    insert_idx = final_df.columns.get_loc(col_to_insert_after) + 1
 
     # Insert columns with default value "Not reported"
     final_df.insert(insert_idx, "variant_segmentation_sop_instance_uid", "Not reported")
@@ -702,13 +706,14 @@ def octa_manifest(imaging_folder):
 
     # Save the final combined DataFrame as a single TSV file
     final_df.to_csv(
-        f"{imaging_folder}/retinal_octa/manifest.tsv", sep="\t", index=False
+        os.path.join(imaging_folder, "retinal_octa", "manifest.tsv"),
+        sep="\t",
+        index=False,
     )
 
 
-
 def create_metadata(imaging_folder):
-    metadata_folder = f"{imaging_folder}_metadata"
+    metadata_folder = f"{imaging_folder}_metadata"  # This is a suffix, not a path join
     os.makedirs(metadata_folder, exist_ok=True)
     print("foldermade")
 
@@ -732,7 +737,9 @@ def create_metadata(imaging_folder):
             )
 
         elif "eidon" in file:
-            imaging_eidon_retinal_photography_metadata.meta_data_save(file, metadata_folder)
+            imaging_eidon_retinal_photography_metadata.meta_data_save(
+                file, metadata_folder
+            )
 
         elif "maestro" in file or "triton" in file:
             imaging_maestro2_triton_metadata.meta_data_save(file, metadata_folder)
@@ -742,14 +749,12 @@ def create_metadata(imaging_folder):
             print(file)
 
 
-
 def make_retinal_photography_manifest(imaging_folder):
-    metadata_folder = f"{imaging_folder}_metadata"
-
+    metadata_folder = f"{imaging_folder}_metadata"  # This is a suffix, not a path join
 
     retinal_photography = "retinal_photography"
 
-    files = get_json_filenames(f"{metadata_folder}/{retinal_photography}")
+    files = get_json_filenames(os.path.join(metadata_folder, retinal_photography))
 
     data = []
 
@@ -782,14 +787,15 @@ def make_retinal_photography_manifest(imaging_folder):
     # Concatenate all DataFrames in the list into one large DataFrame
     final_df = pd.concat(data, ignore_index=True)
     final_df = final_df.sort_values(by=["person_id", "filepath"])
-    op = f"{imaging_folder}/retinal_photography/manifest.tsv"
+    op = os.path.join(imaging_folder, "retinal_photography", "manifest.tsv")
     final_df.to_csv(op, sep="\t", index=False)
 
     return op, metadata_folder
 
+
 def make_retinal_oct_manifest(op, imaging_folder):
 
-    metadata_folder = f"{imaging_folder}_metadata"
+    metadata_folder = f"{imaging_folder}_metadata"  # This is a suffix, not a path join
 
     retinal_oct = "retinal_oct"
     input_op = op
@@ -797,7 +803,7 @@ def make_retinal_oct_manifest(op, imaging_folder):
     # Load the input_op TSV file
     input_df = pd.read_csv(input_op, sep="\t")
 
-    files = get_json_filenames(f"{metadata_folder}/{retinal_oct}")
+    files = get_json_filenames(os.path.join(metadata_folder, retinal_oct))
 
     # Read JSON files and make a DataFrame
     data = []
@@ -810,7 +816,6 @@ def make_retinal_oct_manifest(op, imaging_folder):
 
             # Convert the flattened data into a DataFrame
             df = pd.DataFrame(flattened_data)
-
 
             # Filter specific columns
             df_filtered = df[
@@ -832,7 +837,6 @@ def make_retinal_oct_manifest(op, imaging_folder):
                 ]
             ].copy()
 
-            #  Add the "reference_filepath" by matching "reference_instance_uid" with the "sop_instance_uid" in input_op
             df_filtered.loc[:, "reference_filepath"] = df_filtered[
                 "reference_retinal_photography_image_instance_uid"
             ].map(input_df.set_index("sop_instance_uid")["filepath"])
@@ -849,7 +853,7 @@ def make_retinal_oct_manifest(op, imaging_folder):
     final_df = pd.concat(data, ignore_index=True)
     final_df = final_df.sort_values(by=["person_id", "filepath"])
 
-    opt = f"{imaging_folder}/retinal_oct/manifest.tsv"
+    opt = os.path.join(imaging_folder, "retinal_oct", "manifest.tsv")
     final_df.to_csv(
         opt,
         sep="\t",
@@ -858,10 +862,10 @@ def make_retinal_oct_manifest(op, imaging_folder):
 
 
 def make_flio_manifest(imaging_folder):
-    metadata_folder = f"{imaging_folder}_metadata"
+    metadata_folder = f"{imaging_folder}_metadata"  # This is a suffix, not a path join
     retinal_flio = "retinal_flio"
 
-    files = get_json_filenames(f"{metadata_folder}/{retinal_flio}")
+    files = get_json_filenames(os.path.join(metadata_folder, retinal_flio))
 
     # Read JSON files and make a DataFrame
     data = []
@@ -896,7 +900,7 @@ def make_flio_manifest(imaging_folder):
     # Step 5: Concatenate all DataFrames in the list into one large DataFrame
     final_df = pd.concat(data, ignore_index=True)
     final_df = final_df.sort_values(by=["person_id", "filepath"])
-    flio = f"{imaging_folder}/retinal_flio/manifest.tsv"
+    flio = os.path.join(imaging_folder, "retinal_flio", "manifest.tsv")
     final_df.to_csv(
         flio,
         sep="\t",

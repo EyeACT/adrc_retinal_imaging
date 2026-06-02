@@ -22,7 +22,7 @@ def filter_optomed_files(file, outputfolder):
 
     if imaging_classifying_rules.is_dicom_file(file):
 
-        filename = file.split("/")[-1]
+        filename = os.path.basename(file)
         rule = imaging_classifying_rules.find_rule(file)
         b = imaging_classifying_rules.extract_dicom_entry(file)
         laterality = b.laterality
@@ -35,7 +35,7 @@ def filter_optomed_files(file, outputfolder):
         name = b.name
 
         original_path = file
-        output_path = f"{outputfolder}/{rule}/{rule}_{filename}"
+        output_path = os.path.join(outputfolder, rule, f"{rule}_{filename}")
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
         shutil.copyfile(original_path, output_path)
 
@@ -51,11 +51,11 @@ def filter_optomed_files(file, outputfolder):
         }
 
     else:
-        filename = file.split("/")[-1]
+        filename = os.path.basename(file)
         error = "Invalid_dicom"
 
         original_path = file
-        output_path = f"{outputfolder}/{error}/{error}_{filename}"
+        output_path = os.path.join(outputfolder, error, f"{error}_{filename}")
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
         shutil.copyfile(original_path, output_path)
 

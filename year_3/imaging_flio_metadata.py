@@ -21,7 +21,7 @@ def meta_data_save(filename, output_folder):
 
     dataset = pydicom.dcmread(filename)
 
-    start_index = filename.find("/retinal_flio")
+    start_index = filename.find(f"{os.path.sep}retinal_flio")
     file = filename[start_index:]
 
     patient_id = dataset.get("PatientID", "")
@@ -65,20 +65,24 @@ def meta_data_save(filename, output_folder):
         "sop_instance_uid": sop_instance_uid,
     }
 
-    filename = file.split("/")[-1].replace(".", "_")
+    filename = os.path.basename(file).replace(".", "_")
 
     json_data = {filename: dic}
 
     # Attempt to create the directory and handle any errors
     try:
-        os.makedirs(f"{output_folder}/retinal_flio", exist_ok=True)
+        os.makedirs(os.path.join(output_folder, "retinal_flio"), exist_ok=True)
     except Exception as e:
-        print(f"Error creating directory {output_folder}/retinal_flio: {e}")
+        print(
+            f"Error creating directory {os.path.join(output_folder, 'retinal_flio')}: {e}"
+        )
         return
 
     # Attempt to save the JSON file and handle any errors
     try:
-        with open(f"{output_folder}/retinal_flio/{filename}.json", "w") as json_file:
+        with open(
+            os.path.join(output_folder, "retinal_flio", f"{filename}.json"), "w"
+        ) as json_file:
             json.dump(json_data, json_file)
     except Exception as e:
         print(f"Error saving file {filename}.json: {e}")

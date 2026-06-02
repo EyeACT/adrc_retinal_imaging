@@ -9,9 +9,14 @@ from tqdm import tqdm
 
 # This line is specific to your local machine's setup.
 # It tells Python where to find your custom modules.
-sys.path.append("/Users/nayoonkim/pipeline_imaging/aireadi_retinal_imaging/year_3")
+# Add year_3 directory to path - OS agnostic
+year_3_path = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "year_3"
+)
+sys.path.append(year_3_path)
 
 import imaging_utils
+
 # Now that the path is added, you can import your custom modules
 import pydicom
 from imaging_eidon_retinal_photography_root import Eidon
@@ -32,52 +37,70 @@ def write_log(log_file_path, input_path, status, error_message=""):
     file_exists = os.path.exists(log_file_path)
 
     # 'a' mode is for appending, newline='' prevents extra blank rows
-    with open(log_file_path, 'a', newline='') as csvfile:
-        fieldnames = ['Timestamp', 'Input', 'Status', 'ErrorMessage']
+    with open(log_file_path, "a", newline="") as csvfile:
+        fieldnames = ["Timestamp", "Input", "Status", "ErrorMessage"]
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
         if not file_exists:
             writer.writeheader()  # Write the header row
 
-        writer.writerow({
-            'Timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            'Input': input_path,
-            'Status': status,
-            'ErrorMessage': error_message
-        })
+        writer.writerow(
+            {
+                "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "Input": input_path,
+                "Status": status,
+                "ErrorMessage": error_message,
+            }
+        )
+
 
 def main():
     """
     Main function to parse command-line arguments and run the Eidon processing pipeline.
     """
+    # Example paths - replace with your actual paths or use command-line arguments
+    # download_folder = os.path.join(os.path.expanduser("~"), "Downloads")
+    # input_folder = os.path.join(download_folder, "year3+raw", "eidon")
+    # output_folder = os.path.join(download_folder, "year3+processed", "eidon")
+
+    drive_folder = "D:\\"
+    input_folder = os.path.join(drive_folder, "year3+raw", "eidon")
+    output_folder = os.path.join(drive_folder, "year3+processed", "eidon")
+
+    # delete the output_folder if it exists
+    if os.path.exists(output_folder):
+        shutil.rmtree(output_folder)
+
+    os.makedirs(output_folder)
     # 1. --- Argument Parsing ---
     # This section sets up how the script receives instructions from the command line.
-    parser = argparse.ArgumentParser(
-        description="A script to process Eidon imaging data from raw files to structured DICOMs."
-    )
+    # parser = argparse.ArgumentParser(
+    #     description="A script to process Eidon imaging data from raw files to structured DICOMs."
+    # )
 
-    parser.add_argument(
-        "-i", "--input-folder",
-        dest="input_folder",
-        required=True,
-        help="Path to the root input folder containing the initial data.",
-        metavar="PATH"
-    )
+    # parser.add_argument(
+    #     "-i",
+    #     "--input-folder",
+    #     dest="input_folder",
+    #     required=True,
+    #     help="Path to the root input folder containing the initial data.",
+    #     metavar="PATH",
+    # )
 
-    parser.add_argument(
-        "-o", "--output-folder",
-        dest="output_folder",
-        required=True,
-        help="Path to the root folder where all processed steps and outputs will be saved.",
-        metavar="PATH"
-    )
+    # parser.add_argument(
+    #     "-o",
+    #     "--output-folder",
+    #     dest="output_folder",
+    #     required=True,
+    #     help="Path to the root folder where all processed steps and outputs will be saved.",
+    #     metavar="PATH",
+    # )
 
+    # args = parser.parse_args()
 
-    args = parser.parse_args()
-
-    # Assign the parsed arguments to variables
-    input_folder = args.input_folder
-    output_folder = args.output_folder
+    # # Assign the parsed arguments to variables
+    # input_folder = args.input_folder
+    # output_folder = args.output_folder
 
     print("--- Starting Eidon Processing Pipeline ---")
     print(f"Input Folder: {input_folder}")
@@ -93,10 +116,16 @@ def main():
     step3_folder = os.path.join(output_folder, "step3_converted_dicom")
     step4_folder = os.path.join(output_folder, "step4_final_structure")
     metadata_folder = os.path.join(output_folder, "metadata")
-    logs_folder = os.path.join(output_folder, "logs") 
+    logs_folder = os.path.join(output_folder, "logs")
 
     # Create the main output folder structure
-    folders_to_recreate = [step2_folder, step3_folder, step4_folder, metadata_folder, logs_folder]
+    folders_to_recreate = [
+        step2_folder,
+        step3_folder,
+        step4_folder,
+        metadata_folder,
+        logs_folder,
+    ]
 
     print("Resetting output directories...")
     for folder in folders_to_recreate:
@@ -105,9 +134,8 @@ def main():
             shutil.rmtree(folder)
         # Create the folder fresh
         os.makedirs(folder)
-    
-    print("Directory structure is ready.")
 
+    print("Directory structure is ready.")
 
     # 3. --- Processing Pipeline ---
 
@@ -135,31 +163,31 @@ def main():
     step3_log_path = os.path.join(logs_folder, "step3_convert_log.csv")
     folders = imaging_utils.list_subfolders(step2_folder)
     protocols = [
-    "eidon_mosaic_cfp",
-    "eidon_uwf_central_cfp",
-    "eidon_uwf_central_faf",
-    "eidon_uwf_central_ir",
-    "eidon_uwf_nasal_cfp",
-    "eidon_uwf_temporal_cfp",
-]
+        "eidon_mosaic_cfp",
+        "eidon_uwf_central_cfp",
+        "eidon_uwf_central_faf",
+        "eidon_uwf_central_ir",
+        "eidon_uwf_nasal_cfp",
+        "eidon_uwf_temporal_cfp",
+    ]
 
     for protocol in protocols:
-        output = f"{step3_folder}/{protocol}"
+        output = os.path.join(step3_folder, protocol)
         if not os.path.exists(output):
             os.makedirs(output)
 
-        files = imaging_utils.get_filtered_file_names(f"{step2_folder}/{protocol}")
+        files = imaging_utils.get_filtered_file_names(
+            os.path.join(step2_folder, protocol)
+        )
 
         for file in tqdm(files, desc="Converting"):
             try:
                 convert_result = eidon_instance.convert(file, output)
                 # write_log(step3_log_path, file, "SUCCESS")
             except Exception as e:
-                 # If an error occurs, log it and continue to the next folder
+                # If an error occurs, log it and continue to the next folder
                 print(f"\nERROR converting {file}: {e}")
                 write_log(step3_log_path, file, "FAILURE", str(e))
-                
-
 
     # Step 3: Final Structure and Metadata Extraction
     print("\nStep: Arranging final structure and extracting metadata...")
@@ -177,13 +205,11 @@ def main():
                         full_file_path, metadata_folder
                     )
                     # write_log(step4_log_path, file, "SUCCESS")
-                    
+
             except Exception as e:
                 # If an error occurs, log it and continue to the next folder
                 print(f"\nERROR finalizing {file}: {e}")
                 write_log(step4_log_path, file, "FAILURE", str(e))
-
-
 
 
 if __name__ == "__main__":

@@ -58,23 +58,35 @@ def filter_cirrus_files(folder, output):
                                 else:
                                     try:
                                         # read only metadata, skip pixel data for speed
-                                        data = pydicom.dcmread(file_path, stop_before_pixels=True)
+                                        data = pydicom.dcmread(
+                                            file_path, stop_before_pixels=True
+                                        )
                                     except Exception as e:
-                                        print(f"Skipping non-DICOM or unreadable file: {file_path} ({e})")
+                                        print(
+                                            f"Skipping non-DICOM or unreadable file: {file_path} ({e})"
+                                        )
                                         continue
-
 
                                     laterality = data.ImageLaterality
                                     patientid = data.PatientID
 
-                                    outputfolder = f"{output}/{protocol}/{protocol}_{patientid}_{laterality}_{file}"
+                                    outputfolder = os.path.join(
+                                        output,
+                                        protocol,
+                                        f"{protocol}_{patientid}_{laterality}_{file}",
+                                    )
+                                    output_path = os.path.join(
+                                        output,
+                                        protocol,
+                                        f"{protocol}_{patientid}_{laterality}_{original_folder_basename}",
+                                    )
                                     os.makedirs(
-                                        f"{output}/{protocol}/{protocol}_{patientid}_{laterality}_{original_folder_basename}",
+                                        output_path,
                                         exist_ok=True,
                                     )
                                     shutil.copytree(
                                         folder,
-                                        f"{output}/{protocol}/{protocol}_{patientid}_{laterality}_{original_folder_basename}",
+                                        output_path,
                                         dirs_exist_ok=True,
                                     )
 
@@ -99,10 +111,15 @@ def filter_cirrus_files(folder, output):
                                             else:
                                                 try:
                                                     # read only metadata, skip pixel data for speed
-                                                    data = pydicom.dcmread(file_path, stop_before_pixels=True)
+                                                    data = pydicom.dcmread(
+                                                        file_path,
+                                                        stop_before_pixels=True,
+                                                    )
                                                 except Exception as e:
-                                                    print(f"Skipping non-DICOM or unreadable file: {file_path} ({e})")
-                                        
+                                                    print(
+                                                        f"Skipping non-DICOM or unreadable file: {file_path} ({e})"
+                                                    )
+
                                             laterality = data.ImageLaterality
                                             patientid = data.PatientID
                                             protocol = (
@@ -116,7 +133,11 @@ def filter_cirrus_files(folder, output):
                                             )
 
                                             # Define the output folder
-                                            outputfolder = f"{output}/{protocol}/{protocol}_{patientid}_{laterality}_{original_folder_basename}"
+                                            outputfolder = os.path.join(
+                                                output,
+                                                protocol,
+                                                f"{protocol}_{patientid}_{laterality}_{original_folder_basename}",
+                                            )
 
                                             # Ensure the output folder exists
                                             os.makedirs(outputfolder, exist_ok=True)
@@ -153,21 +174,30 @@ def filter_cirrus_files(folder, output):
                                             )
 
                                             if file_path.lower().endswith(".csv"):
-                                            # skip CSVs
+                                                # skip CSVs
                                                 continue
                                             else:
                                                 try:
                                                     # read only metadata, skip pixel data for speed
-                                                    data = pydicom.dcmread(file_path, stop_before_pixels=True)
+                                                    data = pydicom.dcmread(
+                                                        file_path,
+                                                        stop_before_pixels=True,
+                                                    )
                                                 except Exception as e:
-                                                    print(f"Skipping non-DICOM or unreadable file: {file_path} ({e})")
-                                   
+                                                    print(
+                                                        f"Skipping non-DICOM or unreadable file: {file_path} ({e})"
+                                                    )
+
                                             laterality = data.ImageLaterality
                                             patientid = data.PatientID
                                             protocol = "wrong_angio_protocol"
 
                                             # Define the output folder
-                                            outputfolder = f"{output}/{protocol}/{protocol}_{patientid}_{laterality}_{original_folder_basename}"
+                                            outputfolder = os.path.join(
+                                                output,
+                                                protocol,
+                                                f"{protocol}_{patientid}_{laterality}_{original_folder_basename}",
+                                            )
 
                                             # Ensure the output folder exists
                                             os.makedirs(outputfolder, exist_ok=True)
@@ -207,10 +237,14 @@ def filter_cirrus_files(folder, output):
                                         else:
                                             try:
                                                 # read only metadata, skip pixel data for speed
-                                                data = pydicom.dcmread(file_path, stop_before_pixels=True)
+                                                data = pydicom.dcmread(
+                                                    file_path, stop_before_pixels=True
+                                                )
                                             except Exception as e:
-                                                print(f"Skipping non-DICOM or unreadable file: {file_path} ({e})")
-                                                
+                                                print(
+                                                    f"Skipping non-DICOM or unreadable file: {file_path} ({e})"
+                                                )
+
                                         laterality = data.ImageLaterality
                                         patientid = data.PatientID
                                         protocol = (
@@ -224,7 +258,11 @@ def filter_cirrus_files(folder, output):
                                         )
 
                                         # Define the output folder
-                                        outputfolder = f"{output}/{protocol}/{protocol}_{patientid}_{laterality}_{original_folder_basename}"
+                                        outputfolder = os.path.join(
+                                            output,
+                                            protocol,
+                                            f"{protocol}_{patientid}_{laterality}_{original_folder_basename}",
+                                        )
 
                                         # Ensure the output folder exists
                                         os.makedirs(outputfolder, exist_ok=True)
@@ -254,7 +292,7 @@ def filter_cirrus_files(folder, output):
 
                 protocol = f"{check}"
 
-                outputfolder = f"{output}/{protocol}"
+                outputfolder = os.path.join(output, protocol)
 
                 if file_path.lower().endswith(".csv"):
                     # skip CSVs
@@ -264,8 +302,10 @@ def filter_cirrus_files(folder, output):
                         # read only metadata, skip pixel data for speed
                         a = pydicom.dcmread(filtered_list[0])
                     except Exception as e:
-                        print(f"Skipping non-DICOM or unreadable file: {filtered_list[0]} ({e})")
-                        
+                        print(
+                            f"Skipping non-DICOM or unreadable file: {filtered_list[0]} ({e})"
+                        )
+
                 patientid = a.PatientID if hasattr(a, "PatientID") else "N/A"
                 laterality = (
                     a.ImageLaterality if hasattr(a, "ImageLaterality") else "N/A"
@@ -275,7 +315,9 @@ def filter_cirrus_files(folder, output):
                 os.makedirs(outputfolder, exist_ok=True)
 
                 # Construct the source folder path
-                source_folder = f"{outputfolder}/{protocol}_{folder.split('/')[-1]}"
+                source_folder = os.path.join(
+                    outputfolder, f"{protocol}_{os.path.basename(folder)}"
+                )
                 os.makedirs(source_folder, exist_ok=True)
 
                 # Copy the entire folder to the output directory
@@ -293,13 +335,15 @@ def filter_cirrus_files(folder, output):
 
             protocol = "invalid_dicom"
 
-            outputfolder = f"{output}/{protocol}"
+            outputfolder = os.path.join(output, protocol)
 
             # Ensure the output folder exists
             os.makedirs(outputfolder, exist_ok=True)
 
             # Construct the source folder path
-            source_folder = f"{outputfolder}/{protocol}_{folder.split('/')[-1]}"
+            source_folder = os.path.join(
+                outputfolder, f"{protocol}_{os.path.basename(folder)}"
+            )
             os.makedirs(source_folder, exist_ok=True)
 
             # Copy the entire folder to the output directory
@@ -316,13 +360,15 @@ def filter_cirrus_files(folder, output):
     else:
 
         protocol = "no_files"
-        outputfolder = f"{output}/{protocol}"
+        outputfolder = os.path.join(output, protocol)
 
         # Ensure the output folder exists
         os.makedirs(outputfolder, exist_ok=True)
 
         # Construct the source folder path
-        source_folder = f"{outputfolder}/{protocol}_{folder.split('/')[-1]}"
+        source_folder = os.path.join(
+            outputfolder, f"{protocol}_{os.path.basename(folder)}"
+        )
         os.makedirs(source_folder, exist_ok=True)
 
         # Copy the entire folder to the output directory

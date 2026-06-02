@@ -203,9 +203,7 @@ spectralis = ConversionRule(
             [
                 Element("CodeValue", "00080100", "SH", HARMONIZE, "81016008"),
                 Element("CodingSchemeDesignator", "00080102", "SH", HARMONIZE, "SCT"),
-                Element(
-                    "CodeMeaning", "00080104", "LO", HARMONIZE, "Optic nerve head"
-                ),
+                Element("CodeMeaning", "00080104", "LO", HARMONIZE, "Optic nerve head"),
             ],
         ),
         ElementList(
@@ -331,11 +329,11 @@ def extract_dicom_dict(file, tags):
     dataset = pydicom.dcmread(file)
     dataset.PatientOrientation = ["L", "F"]
     dataset.ImageType = ["ORIGINAL", "PRIMARY", "", "INFRARED"]
-    
+
     seq = getattr(dataset, "PatientEyeMovementCommandCodeSequence", None)
     if seq and len(seq) > 0:
         item = seq[0]
-        item.CodingSchemeDesignator = "SCT"  
+        item.CodingSchemeDesignator = "SCT"
 
         lat = getattr(dataset, "ImageLaterality", None)
         if lat == "R":
@@ -545,12 +543,12 @@ def convert_dicom(input, output):
     )
     try:
         x = extract_dicom_dict(input, tags)
-        filename = input.split("/")[-1]
+        filename = os.path.basename(input)
         b = imaging_classifying_rules.extract_dicom_entry(input)
         rule = imaging_classifying_rules.find_rule(input)
 
         convert = "no"
-        write_dicom(conversion_rule, x, f"{output}/converted_{filename}")
+        write_dicom(conversion_rule, x, os.path.join(output, f"converted_{filename}"))
         convert = "yes"
 
     except Exception as e:
@@ -561,7 +559,7 @@ def convert_dicom(input, output):
         "Rule": rule,
         "Converted": convert,
         "Input": input,
-        "Output": f"{output}/converted_{filename}",
+        "Output": os.path.join(output, f"converted_{filename}"),
     }
 
     return dic

@@ -5,14 +5,19 @@ import pandas as pd
 import pydicom
 from tqdm import tqdm
 
-sys.path.append("/Users/nayoonkim/pipeline_imaging/a_year3/year_3")
+# Add year_3 directory to path - OS agnostic
+repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+year_3_path = os.path.join(repo_path, "year_3")
+sys.path.append(year_3_path)
+# sys.path.append("/Users/nayoonkim/pipeline_imaging/a_year3/year_3")
+
 import json
 import re
 
 import imaging_utils
 
 
-def get_topcon_info (base_path):
+def get_topcon_info(base_path):
     oct_folders = []
 
     # Walk two levels deep
@@ -48,12 +53,17 @@ def get_topcon_info (base_path):
     # Create DataFrame after loop
     df = pd.DataFrame(
         data,
-        columns=["sop_uid_trimmed", "participant_id", "manufacturers_model_name", "folder"],
+        columns=[
+            "sop_uid_trimmed",
+            "participant_id",
+            "manufacturers_model_name",
+            "folder",
+        ],
     )
     return df
 
 
-def get_difference (file1, file2):
+def get_difference(file1, file2):
     dcm1 = pydicom.dcmread(file1)
     dcm2 = pydicom.dcmread(file2)
 
@@ -75,6 +85,7 @@ def get_difference (file1, file2):
             print(f"  dcm2: {val2}")
             print("-" * 40)
 
+
 import hashlib
 
 import pydicom
@@ -86,6 +97,7 @@ from pydicom.valuerep import PersonName
 try:
     import numpy as np
     from pydicom.pixel_data_handlers.util import apply_modality_lut
+
     NUMPY_AVAILABLE = True
 except ImportError:
     NUMPY_AVAILABLE = False
@@ -103,7 +115,6 @@ def elem_name(ds, tag):
     except Exception:
         pass
     return dictionary_description(Tag(tag)) or "Unknown"
-
 
 
 def hash_bytes(b):
@@ -124,6 +135,7 @@ def normalize_value(v):
 
 def compare_values(val1, val2):
     return normalize_value(val1) == normalize_value(val2)
+
 
 def compare_pixel_data(ds1, ds2, path):
     """Special handling for PixelData (7FE0,0010)."""
@@ -155,8 +167,10 @@ def compare_pixel_data(ds1, ds2, path):
                     diff = arr1.astype(np.int64) - arr2.astype(np.int64)
                     n_diff = np.count_nonzero(diff)
                     print(f"  Arrays differ in {n_diff} pixels")
-                    print(f"  Min/Max/Mean difference: "
-                          f"{diff.min()} / {diff.max()} / {diff.mean():.3f}")
+                    print(
+                        f"  Min/Max/Mean difference: "
+                        f"{diff.min()} / {diff.max()} / {diff.mean():.3f}"
+                    )
             except Exception as e:
                 print(f"  (Could not decode PixelData: {e})")
         print("-" * 40)
@@ -207,7 +221,9 @@ def get_difference_pixel_nested(file1, file2):
                 seq1, seq2 = elem1.value, elem2.value
                 if len(seq1) != len(seq2):
                     printed["diff"] = True
-                    print(f"{path}{format_tag(tag)} {elem_name(ds1, tag)} (SQ) length differs:")
+                    print(
+                        f"{path}{format_tag(tag)} {elem_name(ds1, tag)} (SQ) length differs:"
+                    )
                     print(f"  dcm1: {len(seq1)} item(s)")
                     print(f"  dcm2: {len(seq2)} item(s)")
                     print("-" * 40)
@@ -241,8 +257,10 @@ def get_difference_pixel_nested(file1, file2):
         if v1 is None and v2 is None:
             return False
         if v1 is None or v2 is None or v1.value != v2.value:
-            print(f"{path}(7FE0,0010) PixelData differs "
-                  f"md5={hash_bytes(v1.value) if v1 else None} vs {hash_bytes(v2.value) if v2 else None}")
+            print(
+                f"{path}(7FE0,0010) PixelData differs "
+                f"md5={hash_bytes(v1.value) if v1 else None} vs {hash_bytes(v2.value) if v2 else None}"
+            )
             print("-" * 40)
             return True
         return False
@@ -273,6 +291,7 @@ def get_all_paths(root):
         for f in filenames:
             all_paths.add(os.path.join(rel_dir, f))
     return all_paths
+
 
 def compare_folders(folder1, folder2):
     set1 = get_all_paths(folder1)
@@ -321,6 +340,7 @@ def same_number_tags(files):
     else:
         print("\n⚠️ Files differ in number of tags.")
 
+
 import pydicom
 
 
@@ -336,7 +356,9 @@ def check_sopclassuid(file_list):
             sop_uids[f] = f"Error: {e}"
 
     # Collect unique UIDs
-    unique_uids = set(v for v in sop_uids.values() if v and not str(v).startswith("Error"))
+    unique_uids = set(
+        v for v in sop_uids.values() if v and not str(v).startswith("Error")
+    )
 
     print("\nSOPClassUIDs found:")
     # for f, uid in sop_uids.items():
@@ -351,12 +373,15 @@ def check_sopclassuid(file_list):
 
     return sop_uids
 
+
 import os
 
 
 def compare_subfolders(folder_a, folder_b):
     # 1. Get basenames of all subfolders in A
-    subfolders_a = [d for d in os.listdir(folder_a) if os.path.isdir(os.path.join(folder_a, d))]
+    subfolders_a = [
+        d for d in os.listdir(folder_a) if os.path.isdir(os.path.join(folder_a, d))
+    ]
 
     print("Subfolders in A:", subfolders_a)
 
@@ -369,8 +394,16 @@ def compare_subfolders(folder_a, folder_b):
             continue
 
         # 2. Collect file names from each subfolder (ignore hidden/system files)
-        files_a = {f for f in os.listdir(path_a) if os.path.isfile(os.path.join(path_a, f)) and not f.startswith("._")}
-        files_b = {f for f in os.listdir(path_b) if os.path.isfile(os.path.join(path_b, f)) and not f.startswith("._")}
+        files_a = {
+            f
+            for f in os.listdir(path_a)
+            if os.path.isfile(os.path.join(path_a, f)) and not f.startswith("._")
+        }
+        files_b = {
+            f
+            for f in os.listdir(path_b)
+            if os.path.isfile(os.path.join(path_b, f)) and not f.startswith("._")
+        }
 
         # 3. Find intersection (same file names in both)
         common_files = files_a & files_b
@@ -379,7 +412,8 @@ def compare_subfolders(folder_a, folder_b):
             print(f"✅ Common files in subfolder '{sub_a}': {sorted(common_files)}")
         else:
             print(f"❌ No common files in subfolder '{sub_a}'")
-            
+
+
 # def get_dcm_files(folder_path):
 #     dcm_files = []
 #     for root, _, files in os.walk(folder_path):
@@ -387,6 +421,7 @@ def compare_subfolders(folder_a, folder_b):
 #             if file.lower().endswith(".dcm"):  # case-insensitive match
 #                 dcm_files.append(os.path.join(root, file))
 #     return dcm_files
+
 
 def get_dcm_files(folder_path):
     dcm_files = []
@@ -397,6 +432,7 @@ def get_dcm_files(folder_path):
                 dcm_files.append(os.path.join(root, file))
     return dcm_files
 
+
 def get_json_files(folder_path):
     dcm_files = []
     for root, _, files in os.walk(folder_path):
@@ -405,6 +441,7 @@ def get_json_files(folder_path):
             if not file.startswith(".") and file.lower().endswith(".json"):
                 dcm_files.append(os.path.join(root, file))
     return dcm_files
+
 
 def clean_filename(filename):
     """
@@ -417,6 +454,7 @@ def clean_filename(filename):
     - str: The cleaned filename with underscores and periods removed.
     """
     return filename.replace("_", "").replace(".", "")
+
 
 import shutil
 
@@ -440,7 +478,9 @@ def merge_folders_filter_id_files(patientid_csv, sources, destination, remove_tx
         files_to_remove = [line.strip() for line in file]
 
     # Read the CSV and get the list of unique study IDs
-    unique_study_ids_list = pd.read_csv(patientid_csv)["Participant ID"].astype(str).unique().tolist()
+    unique_study_ids_list = (
+        pd.read_csv(patientid_csv)["Participant ID"].astype(str).unique().tolist()
+    )
 
     # Convert the files_to_remove list to a set for faster lookup
     files_to_remove_set = set(files_to_remove)
@@ -476,7 +516,7 @@ def merge_folders_filter_id_files(patientid_csv, sources, destination, remove_tx
                         valid_files.append(file)
                     else:
                         if should_remove:
-                            removed_count += 1 
+                            removed_count += 1
                             print(
                                 f"File {file} is in the removal list after cleaning. Skipping..."
                             )
@@ -513,10 +553,10 @@ import os
 def get_patient_ids_from_final_output(folder_path):
     """
     Given a folder, return a list of patient IDs (subfolder basenames).
-    
+
     Args:
         folder_path (str): Path to the main folder.
-    
+
     Returns:
         list: List of patient IDs (subfolder names).
     """
@@ -530,14 +570,23 @@ def get_patient_ids_from_final_output(folder_path):
 import pandas as pd
 
 year2 = pd.read_csv(
-    "/Users/nayoonkim/pipeline_imaging/a_year3/year_3/data/AIREADiPilot-ParticipantIDsForDat_DATA_LABELS_2024-09-25_1141.csv"
+    os.path.join(
+        repo_path,
+        "info",
+        "AIREADiPilot-ParticipantIDsForDat_DATA_LABELS_2024-09-25_1141.csv",
+    )
 )
 only_year2_list = year2["Participant Study ID"].tolist()
 year3 = pd.read_csv(
-    "/Users/nayoonkim/pipeline_imaging/a_year3/year_3/data/Participants for Data Release 3 through 05-01-2025.csv"
+    os.path.join(
+        repo_path,
+        "info",
+        "ID_only_Participants for Data Release 3 through 05-01-2025.csv",
+    )
 )
 total_list = year3["Participant ID"].tolist()
 only_year3_list = list(set(total_list) - set(only_year2_list))
+
 
 def compare_lists(list1, list2):
     """
@@ -549,20 +598,22 @@ def compare_lists(list1, list2):
     # Convert everything to string
     set1, set2 = set(map(str, list1)), set(map(str, list2))
 
-    overlap = sorted(list(set1 & set2))       # Intersection
-    only_in_list1 = sorted(list(set1 - set2)) # Difference
-    only_in_list2 = sorted(list(set2 - set1)) # Difference
+    overlap = sorted(list(set1 & set2))  # Intersection
+    only_in_list1 = sorted(list(set1 - set2))  # Difference
+    only_in_list2 = sorted(list(set2 - set1))  # Difference
 
     return overlap, only_in_list1, only_in_list2
+
 
 import os
 
 
 def list_subfolders(path):
     return [
-        name for name in os.listdir(path)
-        if os.path.isdir(os.path.join(path, name))
+        name for name in os.listdir(path) if os.path.isdir(os.path.join(path, name))
     ]
+
+
 import os
 
 MAPPING = {
@@ -578,6 +629,7 @@ MAPPING = {
     "spectralis_ppol_mac_hr_ir": "spectralis_ppol_mac_hr_oct_ir",
 }
 
+
 def apply_mapping_to_basename(basename, mapping):
     new_name = basename
     for old in sorted(mapping.keys(), key=len, reverse=True):
@@ -588,8 +640,7 @@ def apply_mapping_to_basename(basename, mapping):
 
 def check_discrepancies(folder_a, folder_b, mapping=MAPPING):
     subfolders_a = [
-        d for d in os.listdir(folder_a)
-        if os.path.isdir(os.path.join(folder_a, d))
+        d for d in os.listdir(folder_a) if os.path.isdir(os.path.join(folder_a, d))
     ]
     print(len(subfolders_a))
 
@@ -603,11 +654,13 @@ def check_discrepancies(folder_a, folder_b, mapping=MAPPING):
 
         # Collect files
         files_a = [
-            f for f in os.listdir(path_a)
+            f
+            for f in os.listdir(path_a)
             if os.path.isfile(os.path.join(path_a, f)) and not f.startswith("._")
         ]
         files_b = {
-            f for f in os.listdir(path_b)
+            f
+            for f in os.listdir(path_b)
             if os.path.isfile(os.path.join(path_b, f)) and not f.startswith("._")
         }
 
@@ -624,9 +677,12 @@ def check_discrepancies(folder_a, folder_b, mapping=MAPPING):
         if len(mapped_a_set) != len(files_b) or mapped_a_set != files_b:
             print(f"❌ Discrepancy in subfolder '{sub}':")
             if len(mapped_a_set) != len(files_b):
-                print(f"   • Different file counts (A={len(mapped_a_set)}, B={len(files_b)})")
+                print(
+                    f"   • Different file counts (A={len(mapped_a_set)}, B={len(files_b)})"
+                )
             else:
                 print(f"   • Same count but different names")
+
 
 import os
 
@@ -638,7 +694,8 @@ def save_dcm_basenames_to_txt(folder, output_txt):
     """
     # Collect only .dcm files
     files = [
-        f for f in os.listdir(folder)
+        f
+        for f in os.listdir(folder)
         if os.path.isfile(os.path.join(folder, f)) and f.lower().endswith(".dcm")
     ]
 
@@ -660,7 +717,8 @@ def get_dcm_basenames(folder):
     """
     # Collect only .dcm files
     files = [
-        f for f in os.listdir(folder)
+        f
+        for f in os.listdir(folder)
         if os.path.isfile(os.path.join(folder, f)) and f.lower().endswith(".dcm")
     ]
 
@@ -669,6 +727,7 @@ def get_dcm_basenames(folder):
 
     for b in basenames:
         print(b)
+
 
 import numpy as np
 from PIL import Image
@@ -688,7 +747,7 @@ def file_to_jpg(file, jpg_output):
             img.save(
                 os.path.join(jpg_output, os.path.basename(file) + ".jpg"),
                 format="JPEG",
-                quality=90  # adjust quality (default 75, higher = bigger file, better quality)
+                quality=90,  # adjust quality (default 75, higher = bigger file, better quality)
             )
         elif dimension == 2:
             arr = ds.pixel_array
@@ -696,7 +755,7 @@ def file_to_jpg(file, jpg_output):
             img.save(
                 os.path.join(jpg_output, os.path.basename(file) + ".jpg"),
                 format="JPEG",
-                quality=90
+                quality=90,
             )
         else:
             print("Error: Image dimension not supported")
@@ -705,19 +764,20 @@ def file_to_jpg(file, jpg_output):
         print("Error reading file:", file, "| Exception:", e)
         return
 
+
 import pydicom
 
 
 # Example: maestro2 is your list of DICOM file paths
 def check_unique_sopclassuids(file_list):
     sop_uids = []
-    
+
     for file in tqdm(file_list):
         dcm = pydicom.dcmread(file, stop_before_pixels=True)  # faster, no pixel data
         sop_uids.append(dcm.SOPClassUID)
-    
+
     unique_uids = set(sop_uids)
-    
+
     print("Total files:", len(sop_uids))
     print("Unique SOPClassUIDs:", len(unique_uids))
     print("Unique values:")
@@ -768,6 +828,7 @@ from tqdm import tqdm
 
 def _schema_signature(ds):
     """Return a hashable structural signature of a dataset (tags + nested tags)."""
+
     def walk(dataset):
         entries = []
         for elem in dataset:
@@ -777,7 +838,9 @@ def _schema_signature(ds):
             else:
                 entries.append((int(elem.tag), elem.VR))
         return tuple(sorted(entries))
+
     return sha256(repr(walk(ds)).encode("utf-8")).hexdigest()
+
 
 def all_same_structure(dcm_files, sample_per_group=20):
     """
@@ -807,6 +870,7 @@ def all_same_structure(dcm_files, sample_per_group=20):
 
     return False
 
+
 from typing import List, Tuple
 
 import pydicom
@@ -820,9 +884,11 @@ def _tag_str(t: int) -> str:
     kw = keyword_for_tag(tg) or ""
     return f"({tg.group:04X},{tg.element:04X})" + (f" {kw}" if kw else "")
 
+
 def _is_private(tag_int: int) -> bool:
     """Private tags have odd group number."""
     return ((tag_int >> 16) & 0xFFFF) % 2 == 1
+
 
 def _ds_children(ds: pydicom.dataset.Dataset, include_private_tags: bool) -> dict:
     """Map int(tag) -> element (one per tag at this level)."""
@@ -833,6 +899,7 @@ def _ds_children(ds: pydicom.dataset.Dataset, include_private_tags: bool) -> dic
             continue
         out[ti] = elem
     return out
+
 
 def _diff_ds(
     ds1: pydicom.dataset.Dataset,
@@ -867,11 +934,20 @@ def _diff_ds(
             items1 = e1.value or []
             items2 = e2.value or []
             if len(items1) != len(items2):
-                diffs.append(f"{p} sequence length differs: A={len(items1)}, B={len(items2)}")
+                diffs.append(
+                    f"{p} sequence length differs: A={len(items1)}, B={len(items2)}"
+                )
             # Compare per-index up to min length
             for i in range(min(len(items1), len(items2))):
-                _diff_ds(items1[i], items2[i], path=f"{p}[{i}]/", include_vr=include_vr,
-                         include_private_tags=include_private_tags, diffs=diffs)
+                _diff_ds(
+                    items1[i],
+                    items2[i],
+                    path=f"{p}[{i}]/",
+                    include_vr=include_vr,
+                    include_private_tags=include_private_tags,
+                    diffs=diffs,
+                )
+
 
 def diff_dicom_structures(
     a_file: str,
@@ -888,11 +964,15 @@ def diff_dicom_structures(
     ds1 = pydicom.dcmread(a_file, stop_before_pixels=stop_before_pixels)
     ds2 = pydicom.dcmread(b_file, stop_before_pixels=stop_before_pixels)
     diffs: List[str] = []
-    _diff_ds(ds1, ds2, path="", include_vr=include_vr,
-             include_private_tags=include_private_tags, diffs=diffs)
+    _diff_ds(
+        ds1,
+        ds2,
+        path="",
+        include_vr=include_vr,
+        include_private_tags=include_private_tags,
+        diffs=diffs,
+    )
     return diffs
-
-
 
 
 # def _schema_signature(ds):

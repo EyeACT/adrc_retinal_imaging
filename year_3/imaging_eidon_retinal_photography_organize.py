@@ -22,7 +22,7 @@ def filter_eidon_files(file, outputfolder):
 
     if imaging_classifying_rules.is_dicom_file(file):
 
-        filename = file.split("/")[-1]
+        filename = os.path.basename(file)
         rule = imaging_classifying_rules.find_rule(file)
         b = imaging_classifying_rules.extract_dicom_entry(file)
         laterality = b.laterality
@@ -51,7 +51,7 @@ def filter_eidon_files(file, outputfolder):
         }
 
     else:
-        filename = file.split("/")[-1]
+        filename = os.path.basename(file)
         error = "Invalid_dicom"
 
         original_path = file

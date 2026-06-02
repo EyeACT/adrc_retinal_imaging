@@ -1,8 +1,12 @@
-import sys
-
-sys.path.append("/Users/nayoonkim/pipeline_imaging/aireadi_retinal_imaging/year_3")
 import argparse
 import os
+import sys
+
+# Add year_3 directory to path - OS agnostic
+year_3_path = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "year_3"
+)
+sys.path.append(year_3_path)
 
 import compliance_report
 import compliance_rules
@@ -49,6 +53,7 @@ DicomDictionary.update(new_dict_items)
 new_names_dict = dict([(val[4], tag) for tag, val in new_dict_items.items()])
 keyword_dict.update(new_names_dict)
 
+
 def sort_them_by_sop_class(input_folder, device_protocol, output_folder):
     # Initialize lists to store files based on SOP Class
     sop_class_1 = []
@@ -60,7 +65,7 @@ def sort_them_by_sop_class(input_folder, device_protocol, output_folder):
 
     device_protocol = device_protocol
     device = device_protocol.split("_")[0]
-    
+
     output_path = os.path.join(output_folder, device)
     os.makedirs(output_path, exist_ok=True)
 
@@ -96,7 +101,7 @@ def sort_them_by_sop_class(input_folder, device_protocol, output_folder):
         compliance_report.create_report(
             compliance_rules.cfp_ir_rule,
             sorted(sop_class_1),
-            f"{output_folder}/{device}/{device_protocol}_eval_op.xlsx",
+            os.path.join(output_folder, device, f"{device_protocol}_eval_op.xlsx"),
         )
 
         nested_structure_excel.multi_create_excelsheet_nested_structure(
@@ -118,7 +123,9 @@ def sort_them_by_sop_class(input_folder, device_protocol, output_folder):
                 # channel description
                 "0022001A",
             ],
-            f"{output_folder}/{device}/{device_protocol}_eval_op_nested.xlsx",
+            os.path.join(
+                output_folder, device, f"{device_protocol}_eval_op_nested.xlsx"
+            ),
         )
 
     if sop_class_2:
@@ -126,7 +133,7 @@ def sort_them_by_sop_class(input_folder, device_protocol, output_folder):
         compliance_report.create_report(
             compliance_rules.oct_b_rule,
             sorted(sop_class_2),
-            f"{output_folder}/{device}/{device_protocol}_eval_oct.xlsx",
+            os.path.join(output_folder, device, f"{device_protocol}_eval_oct.xlsx"),
         )
         nested_structure_excel.multi_create_excelsheet_nested_structure(
             sorted(sop_class_2),
@@ -147,7 +154,9 @@ def sort_them_by_sop_class(input_folder, device_protocol, output_folder):
                 # AnatomicRegionSequence
                 "00082218",
             ],
-            f"{output_folder}/{device}/{device_protocol}_eval_oct_nested.xlsx",
+            os.path.join(
+                output_folder, device, f"{device_protocol}_eval_oct_nested.xlsx"
+            ),
         )
 
     if sop_class_3:
@@ -155,7 +164,9 @@ def sort_them_by_sop_class(input_folder, device_protocol, output_folder):
         compliance_report.create_report(
             compliance_rules.volume_analysis_rule,
             sorted(sop_class_3),
-            f"{output_folder}/{device}/{device_protocol}_eval_volume_analysis.xlsx",
+            os.path.join(
+                output_folder, device, f"{device_protocol}_eval_volume_analysis.xlsx"
+            ),
         )
 
         # # oct volume
@@ -174,7 +185,11 @@ def sort_them_by_sop_class(input_folder, device_protocol, output_folder):
                 # OCTBScanAnalysisAcquisitionParametersSequence
                 "00221640",
             ],
-            f"{output_folder}/{device}/{device_protocol}_eval_volume_analysis_nested.xlsx",
+            os.path.join(
+                output_folder,
+                device,
+                f"{device_protocol}_eval_volume_analysis_nested.xlsx",
+            ),
         )
 
     # segmentation
@@ -182,7 +197,11 @@ def sort_them_by_sop_class(input_folder, device_protocol, output_folder):
         compliance_report.create_report(
             compliance_rules.heightmap_rule,
             sorted(sop_class_4),
-            f"{output_folder}/{device}/{device_protocol}_eval_heightmap_segmentation.xlsx",
+            os.path.join(
+                output_folder,
+                device,
+                f"{device_protocol}_eval_heightmap_segmentation.xlsx",
+            ),
         )
 
         nested_structure_excel.multi_create_excelsheet_nested_structure(
@@ -200,7 +219,11 @@ def sort_them_by_sop_class(input_folder, device_protocol, output_folder):
                 # ReferencedSeriesSequence
                 "00081115",
             ],
-            f"{output_folder}/{device}/{device_protocol}_eval_heightmap_segmentation_nested.xlsx",
+            os.path.join(
+                output_folder,
+                device,
+                f"{device_protocol}_eval_heightmap_segmentation_nested.xlsx",
+            ),
         )
 
     # Enface
@@ -208,13 +231,13 @@ def sort_them_by_sop_class(input_folder, device_protocol, output_folder):
         compliance_report.create_report(
             compliance_rules.octa_enface_rule,
             sorted(sop_class_5),
-            f"{output_folder}/{device}/{device_protocol}_eval_en_face.xlsx",
+            os.path.join(output_folder, device, f"{device_protocol}_eval_en_face.xlsx"),
         )
 
         # compliance_report.create_report(
         #     compliance_rules.octa_old_enface_rule,
         #     sorted(sop_class_5),
-        #     f"{output_folder}/{device}/{device_protocol}_eval_en_face_old.xlsx",
+        #     os.path.join(output_folder, device, f"{device_protocol}_eval_en_face_old.xlsx"),
         # )
 
         nested_structure_excel.multi_create_excelsheet_nested_structure(
@@ -243,14 +266,16 @@ def sort_them_by_sop_class(input_folder, device_protocol, output_folder):
                 # new tag
                 "00221632",
             ],
-            f"{output_folder}/{device}/{device_protocol}_eval_enface_nested.xlsx",
+            os.path.join(
+                output_folder, device, f"{device_protocol}_eval_enface_nested.xlsx"
+            ),
         )
 
     if sop_class_6:
         compliance_report.create_report(
             compliance_rules.cfp_ir_16_rule,
             sorted(sop_class_6),
-            f"{output_folder}/{device}/{device_protocol}_op_16.xlsx",
+            os.path.join(output_folder, device, f"{device_protocol}_op_16.xlsx"),
         )
 
         # 2d
@@ -273,7 +298,7 @@ def sort_them_by_sop_class(input_folder, device_protocol, output_folder):
                 # channel description
                 "0022001A",
             ],
-            f"{output_folder}/{device}/{device_protocol}_op_16_nested.xlsx",
+            os.path.join(output_folder, device, f"{device_protocol}_op_16_nested.xlsx"),
         )
     return (
         sop_class_1,
@@ -283,7 +308,6 @@ def sort_them_by_sop_class(input_folder, device_protocol, output_folder):
         sop_class_5,
         sop_class_6,
     )
-
 
 
 if __name__ == "__main__":
@@ -314,7 +338,7 @@ if __name__ == "__main__":
 
     # 4. Call the main function with the parsed arguments
     print("--- Starting DICOM Sorting and Reporting ---")
-    
+
     sop1, sop2, sop3, sop4, sop5, sop6 = sort_them_by_sop_class(
         input_folder=args.input_folder,
         device_protocol=args.device_name,
@@ -322,11 +346,15 @@ if __name__ == "__main__":
     )
 
     print("\n--- Analysis Complete ---")
-    print(f"Found {len(sop1)} files for Ophthalmic Photography 8 Bit Image (SOP Class 1)")
+    print(
+        f"Found {len(sop1)} files for Ophthalmic Photography 8 Bit Image (SOP Class 1)"
+    )
     print(f"Found {len(sop2)} files for Ophthalmic Tomography Image (SOP Class 2)")
     print(f"Found {len(sop3)} files for Ophthalmic Tomography Volume (SOP Class 3)")
     print(f"Found {len(sop4)} files for Segmentation (SOP Class 4)")
     print(f"Found {len(sop5)} files for En Face (SOP Class 5)")
-    print(f"Found {len(sop6)} files for Ophthalmic Photography 16 Bit Image (SOP Class 6)")
+    print(
+        f"Found {len(sop6)} files for Ophthalmic Photography 16 Bit Image (SOP Class 6)"
+    )
     print(f"\nAll reports have been saved in the '{args.output_folder}' directory.")
     print("-----------------------------------------")

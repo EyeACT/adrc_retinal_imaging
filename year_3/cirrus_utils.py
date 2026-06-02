@@ -109,7 +109,7 @@ def format_cirrus_file(file, output):
         dataset = pydicom.dcmread(file)
 
     except Exception:
-        full_dir_path = output + "/invalid_dicom"
+        full_dir_path = os.path.join(output, "invalid_dicom")
         os.makedirs(full_dir_path, exist_ok=True)
         filename = os.path.basename(file)
         full_file_path = os.path.join(full_dir_path, filename)
@@ -120,7 +120,7 @@ def format_cirrus_file(file, output):
         #     pixel = dataset.pixel_array
         # except Exception:
         #     # Handle case where pixel_array is not available
-        #     full_dir_path = output + "/error_pixel_data/"
+        #     full_dir_path = os.path.join(output, "error_pixel_data")
         #     os.makedirs(full_dir_path, exist_ok=True)
         #     filename = os.path.basename(file)
         #     full_file_path = os.path.join(full_dir_path, filename)
@@ -130,7 +130,7 @@ def format_cirrus_file(file, output):
         id = imaging_utils.find_id(str(dataset.PatientID), str(dataset.PatientName))
 
         if id == "noid":
-            full_dir_path = output + "/missing_critical_info/no_id/"
+            full_dir_path = os.path.join(output, "missing_critical_info", "no_id")
             os.makedirs(full_dir_path, exist_ok=True)
             filename = os.path.basename(file)
             full_file_path = os.path.join(full_dir_path, filename)
@@ -183,11 +183,11 @@ def format_cirrus_file(file, output):
                 )
                 device_folder = get_description(filename, device_folder_mapping)
 
-            folderpath = (
-                f"/{modality_folder}/{submodality_folder}/{device_folder}/{id}/"
+            folderpath = os.path.join(
+                modality_folder, submodality_folder, device_folder, id
             )
 
-            full_dir_path = output + folderpath
+            full_dir_path = os.path.join(output, folderpath)
 
             os.makedirs(full_dir_path, exist_ok=True)
 

@@ -3,9 +3,13 @@ import os
 import imaging_classifying_rules
 import pydicom
 from cirrus_enface_converter_functional_groups import (
-    derivation_algorithm_sequence, enface_volume_descriptor_sequence,
-    ophthalmic_frame_location_sequence, ophthalmic_image_type_code_sequence,
-    referenced_series_sequence, source_image_sequence)
+    derivation_algorithm_sequence,
+    enface_volume_descriptor_sequence,
+    ophthalmic_frame_location_sequence,
+    ophthalmic_image_type_code_sequence,
+    referenced_series_sequence,
+    source_image_sequence,
+)
 
 KEEP = 0
 BLANK = 1
@@ -359,7 +363,8 @@ def extract_dicom_dict(file, tags):
 
     dataset = pydicom.dcmread(file)
     dataset.PatientOrientation = ["L", "F"]
-    dataset.ImageOrientationPatient = [-1.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+    dataset.ImageOrientationPatient = ""
+    dataset.PixelSpacing = [0.005859375, 0.005859375]
 
     header_elements = {
         "00020000": {
@@ -594,7 +599,7 @@ def convert_dicom(
     opt = extract_dicom_dict(inputopt, ["0020000D", "0020000E", "00080016", "00080018"])
     op = extract_dicom_dict(inputop, ["0020000D", "0020000E", "00080016", "00080018"])
 
-    filename = inputenface.split("/")[-1]
+    filename = os.path.basename(inputenface)
 
     write_dicom(
         conversion_rule,
@@ -605,5 +610,5 @@ def convert_dicom(
         op,
         inputopt,
         inputop,
-        f"{output}/converted_{filename}",
+        os.path.join(output, f"converted_{filename}"),
     )

@@ -4,9 +4,13 @@ import imaging_classifying_rules
 import pydicom
 from pydicom import dcmread, dcmwrite
 from spectralis_onh_oct_converter_functional_groups import (
-    acquisition_device_type_code_sequence, anatomic_region_sequence,
-    dimension_index_sequence, dimension_organization_sequence,
-    per_frame_functional_groups_sequence, shared_functional_group_sequence)
+    acquisition_device_type_code_sequence,
+    anatomic_region_sequence,
+    dimension_index_sequence,
+    dimension_organization_sequence,
+    per_frame_functional_groups_sequence,
+    shared_functional_group_sequence,
+)
 
 KEEP = 0
 BLANK = 1
@@ -521,11 +525,11 @@ def convert_dicom(input, output):
 
     try:
         x = extract_dicom_dict(input, tags)
-        filename = input.split("/")[-1]
+        filename = os.path.basename(input)
         b = imaging_classifying_rules.extract_dicom_entry(input)
         rule = imaging_classifying_rules.find_rule(input)
         convert = "no"
-        write_dicom(conversion_rule, x, f"{output}/converted_{filename}")
+        write_dicom(conversion_rule, x, os.path.join(output, f"converted_{filename}"))
         convert = "yes"
 
     except Exception as e:
@@ -536,7 +540,7 @@ def convert_dicom(input, output):
         "Rule": rule,
         "Converted": convert,
         "Input": input,
-        "Output": f"{output}/converted_{filename}",
+        "Output": os.path.join(output, f"converted_{filename}"),
     }
 
     return dic

@@ -134,7 +134,7 @@ def meta_data_save(filename, output_folder):
 
     if dataset.SOPClassUID == "1.2.840.10008.5.1.4.1.1.77.1.5.1":
 
-        start_index = filename.find("/retinal_photography")
+        start_index = filename.find(f"{os.path.sep}retinal_photography")
         file = filename[start_index:]
 
         # Extracting metadata
@@ -183,14 +183,14 @@ def meta_data_save(filename, output_folder):
             "sop_class_uid": dataset.SOPClassUID,
         }
 
-        filename = file.split("/")[-1].replace(".", "_")
+        filename = os.path.basename(file).replace(".", "_")
 
         json_data = {filename: dic}
 
-        os.makedirs(f"{output_folder}/retinal_photography", exist_ok=True)
+        os.makedirs(os.path.join(output_folder, "retinal_photography"), exist_ok=True)
 
         with open(
-            f"{output_folder}/retinal_photography/{filename}.json", "w"
+            os.path.join(output_folder, "retinal_photography", f"{filename}.json"), "w"
         ) as json_file:
             json.dump(json_data, json_file)
 

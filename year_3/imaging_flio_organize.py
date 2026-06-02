@@ -27,13 +27,13 @@ def filter_flio_files_process(input, output):
 
                 html_file = imaging_utils.get_html_in_folder(folder_path)
                 html_pt_id = imaging_utils.get_patient_id_from_html(
-                    f"{folder_path}/{html_file}"
+                    os.path.join(folder_path, html_file)
                 )
 
-                patient = pt.split("/")[-1]
-                side = one.split("/")[-1]
+                patient = os.path.basename(pt)
+                side = os.path.basename(one)
 
-                outputpath = f"{output}/flio_{patient}_{side}"
+                outputpath = os.path.join(output, f"flio_{patient}_{side}")
 
                 os.makedirs(os.path.dirname(outputpath), exist_ok=True)
                 shutil.copytree(folder_path, outputpath, dirs_exist_ok=True)
@@ -47,17 +47,21 @@ def filter_flio_files_process(input, output):
 
                 dic = {
                     "Input batch folder": one,
-                    "Output folder": outputpath.split("/")[-1],
+                    "Output folder": os.path.basename(outputpath),
                     "Patient ID HTML": html_pt_id,
                     "Error": "None",
                 }
 
             else:
                 print("else")
+                print(f"missing file: {folder_path}")
+                print(f"input folder: {input}")
 
                 dic = {
                     "Input batch folder": input,
-                    "Output folder": outputpath.split("/")[-1],
+                    "Output folder": (
+                        os.path.basename(outputpath) if "outputpath" in locals() else ""
+                    ),
                     "Error": "Missing file",
                 }
 

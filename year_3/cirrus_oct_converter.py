@@ -551,6 +551,8 @@ def convert_dicom(input, output):
     )
     x = extract_dicom_dict(input, tags)
 
-    filename = input.split("/")[-1]
+    filename = os.path.basename(input)
 
-    write_dicom(input, conversion_rule, x, f"{output}/converted_{filename}")
+    write_dicom(
+        input, conversion_rule, x, os.path.join(output, f"converted_{filename}")
+    )

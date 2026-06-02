@@ -76,7 +76,7 @@ def unzip_fda_file(input_zip_path, output_folder_path):
     Returns:
     dict: A dictionary containing the input zip path and the unzipping status.
     """
-    input_name = input_zip_path.split("/")[-1].replace(".", "_")
+    input_name = os.path.basename(input_zip_path).replace(".", "_")
     input_name = input_name[:-4] if input_name.endswith("_zip") else input_name
 
     if "fda" not in input_zip_path.lower():
@@ -89,7 +89,7 @@ def unzip_fda_file(input_zip_path, output_folder_path):
 
     elif "maestro2" in input_zip_path.lower():
         # Create the output folder if it doesn't exist
-        maestro2 = f"{output_folder_path}/Maestro2/{input_name}"
+        maestro2 = os.path.join(output_folder_path, "Maestro2", input_name)
         os.makedirs(maestro2, exist_ok=True)
 
         # Unzip the contents of the zip file into the output folder
@@ -102,7 +102,7 @@ def unzip_fda_file(input_zip_path, output_folder_path):
 
     elif "triton" in input_zip_path.lower():
         # Create the output folder if it doesn't exist
-        triton = f"{output_folder_path}/Triton/{input_name}"
+        triton = os.path.join(output_folder_path, "Triton", input_name)
         os.makedirs(triton, exist_ok=True)
 
         # Unzip the contents of the zip file into the output folder
@@ -114,7 +114,7 @@ def unzip_fda_file(input_zip_path, output_folder_path):
 
     elif "cirrus" in input_zip_path.lower():
         # Create the output folder if it doesn't exist
-        cirrus = f"{output_folder_path}/Cirrus/{input_name}"
+        cirrus = os.path.join(output_folder_path, "Cirrus", input_name)
         os.makedirs(cirrus, exist_ok=True)
 
         # Unzip the contents of the zip file into the output folder
@@ -135,6 +135,7 @@ def unzip_fda_file(input_zip_path, output_folder_path):
         dic = {"Input": f"{input_zip_path}", "Unzipping": "unknown"}
 
         return dic
+
 
 import os
 
@@ -163,7 +164,9 @@ def get_filtered_file_names(folder_path):
             if file.startswith("._"):  # skip hidden AppleDouble files
                 continue
 
-            if not (file[0].isalpha() or file[0].isdigit()):  # must start with letter or digit
+            if not (
+                file[0].isalpha() or file[0].isdigit()
+            ):  # must start with letter or digit
                 continue
 
             full_path = os.path.join(root, file)
@@ -291,7 +294,9 @@ def spectralis_get_filtered_file_names(folder_path):
     for root, dirs, files in os.walk(folder_path):
         for file in files:
             full_path = os.path.join(root, file)
-            if full_path.split("/")[-1] and full_path.split("/")[-1].startswith("0"):
+            if os.path.basename(full_path) and os.path.basename(full_path).startswith(
+                "0"
+            ):
                 filtered_files.append(full_path)
     return filtered_files
 
@@ -372,8 +377,6 @@ def create_structure(main_folder: str) -> None:
         print(" -", os.path.join(main, name))
 
 
-
-
 def get_html_in_folder(folder_path):
     """
     Check if specific files exist in a folder and return the file that ends with .html.
@@ -451,10 +454,10 @@ def filter_flio_files_process(input, output):
             if check_files_in_folder(
                 folder_path, ["Measurement.sdt", "measurement_info.html"]
             ):
-                patient = pt.split("/")[-1]
-                side = one.split("/")[-1]
+                patient = os.path.basename(pt)
+                side = os.path.basename(one)
 
-                outputpath = f"{output}/flio_{patient}_{side}"
+                outputpath = os.path.join(output, f"flio_{patient}_{side}")
                 shutil.copytree(folder_path, outputpath)
             else:
                 print("missing file", folder_path)
@@ -477,7 +480,7 @@ def get_filtered_all_file_names(folder_path):
     for root, dirs, files in os.walk(folder_path):
         for file in files:
             full_path = os.path.join(root, file)
-            if not full_path.split("/")[-1].startswith("._"):
+            if not os.path.basename(full_path).startswith("._"):
                 filtered_files.append(full_path)
     return filtered_files
 
@@ -525,8 +528,6 @@ def get_filtered_all_file_names(folder_path):
 #         sdt_file = ""
 
 #     return sdt_file, html_file
-
-
 
 
 def topcon_check_files_expected(folder_path):
@@ -615,15 +616,26 @@ def topcon_process_folder(folder_path, outputpath, rule):
                 patientid = info.patientid
                 error = info.error
                 if rule.endswith("_oct"):
-                    output = f"{outputpath}/{rule[:-4]}/{rule[:-4]}_{patientid}_{laterality}_{original_folder_basename}"
+                    rule_name = rule[:-4]
+                    output = os.path.join(
+                        outputpath,
+                        rule_name,
+                        f"{rule_name}_{patientid}_{laterality}_{original_folder_basename}",
+                    )
                 else:
-                    output = f"{outputpath}/{rule}/{rule}_{patientid}_{laterality}_{original_folder_basename}"
+                    output = os.path.join(
+                        outputpath,
+                        rule,
+                        f"{rule}_{patientid}_{laterality}_{original_folder_basename}",
+                    )
 
                 os.makedirs(output, exist_ok=True)
-                
+
                 folder = os.path.dirname(file_path)
                 all_items = os.listdir(folder)
-                all_files = [f for f in all_items if os.path.isfile(os.path.join(folder, f))]
+                all_files = [
+                    f for f in all_items if os.path.isfile(os.path.join(folder, f))
+                ]
 
                 if len(all_files) == 3:
                     for item in all_items:
@@ -649,7 +661,6 @@ def topcon_process_folder(folder_path, outputpath, rule):
                             new_filename = f"{original_folder_basename}_{item}"
                             dest_path = os.path.join(output, new_filename)
                             shutil.copy2(source_path, dest_path)
-
 
                 # for item in os.listdir(os.path.dirname(file_path)):
                 #     source_path = os.path.join(os.path.dirname(file_path), item)
@@ -710,7 +721,7 @@ def filter_eidon_files(file, outputfolder):
         original file path, and any errors encountered.
     """
 
-    filename = file.split("/")[-1]
+    filename = os.path.basename(file)
     rule = imaging_classifying_rules.find_rule(file)
     b = imaging_classifying_rules.extract_dicom_entry(file)
     laterality = b.laterality
@@ -723,7 +734,7 @@ def filter_eidon_files(file, outputfolder):
     name = b.name
 
     original_path = file
-    output_path = f"{outputfolder}/{rule}/{rule}_{filename}"
+    output_path = os.path.join(outputfolder, rule, f"{rule}_{filename}")
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     shutil.copyfile(original_path, output_path)
 
@@ -776,7 +787,7 @@ name_mapping = {
     "eidon_uwf_nasal_cfp": "eidon_uwf_nasal_cfp",
     "eidon_uwf_temporal_cfp": "eidon_uwf_temporal_cfp",
     "eidon_uwf_central_cfp": "eidon_uwf_central_cfp",
-    # 6 
+    # 6
     "maestro2_3d_wide_oct": "maestro2_3d_wide_oct",
     "maestro2_mac_6x6_octa": "maestro2_macula_6x6_octa",
     "maestro2_3d_macula_oct": "maestro2_3d_macula_oct",
@@ -844,10 +855,7 @@ def topcon_submodality(file):
     ):
         submodality = "cfp"
 
-    elif (
-        a.SOPClassUID == "1.2.840.10008.5.1.4.1.1.77.1.5.1"
-        and a.ImageType[3] == "IR"
-    ):
+    elif a.SOPClassUID == "1.2.840.10008.5.1.4.1.1.77.1.5.1" and a.ImageType[3] == "IR":
         submodality = "ir"
 
     elif a.SOPClassUID == "1.2.840.10008.5.1.4.1.1.77.1.5.4":
@@ -1054,6 +1062,8 @@ def find_id(patientid, patientname):
                 return find_number(patientname)
             else:
                 return find_number(patientname)
+
+
 import traceback
 
 
@@ -1076,7 +1086,7 @@ def format_file(file, output):
         dataset = pydicom.dcmread(file)
 
     except Exception:
-        full_dir_path = output + "/invalid_dicom"
+        full_dir_path = os.path.join(output, "invalid_dicom")
         os.makedirs(full_dir_path, exist_ok=True)
         filename = os.path.basename(file)
         full_file_path = os.path.join(full_dir_path, filename)
@@ -1097,7 +1107,7 @@ def format_file(file, output):
         id = find_id(str(dataset.PatientID), str(dataset.PatientName))
 
         if id == "noid":
-            full_dir_path = output + "/missing_critical_info/no_id/"
+            full_dir_path = os.path.join(output, "missing_critical_info", "no_id")
             os.makedirs(full_dir_path, exist_ok=True)
             filename = os.path.basename(file)
             full_file_path = os.path.join(full_dir_path, filename)
@@ -1150,7 +1160,7 @@ def format_file(file, output):
                 filename = f"{id}_{modality}_{submodality}_{laterality}_{uid}.dcm"
 
             else:
-      
+
                 filename = f"{id}_{modality}_{laterality}_{uid}.dcm"
 
             if "cirrus" in filename:
@@ -1167,16 +1177,14 @@ def format_file(file, output):
                 submodality_folder = get_description(
                     filename, submodality_folder_mapping
                 )
-                
+
                 device_folder = get_description(filename, device_folder_mapping)
-           
 
-
-            folderpath = (
-                f"/{modality_folder}/{submodality_folder}/{device_folder}/{id}/"
+            folderpath = os.path.join(
+                modality_folder, submodality_folder, device_folder, id
             )
 
-            full_dir_path = output + folderpath
+            full_dir_path = os.path.join(output, folderpath)
 
             os.makedirs(full_dir_path, exist_ok=True)
 
@@ -1185,6 +1193,8 @@ def format_file(file, output):
             dataset.save_as(full_file_path)
 
             return full_file_path
+
+
 # def format_file(file, output):
 #     """
 #     Format a DICOM file and save it to an output directory.
@@ -1393,7 +1403,8 @@ def update_pydicom_dicom_dictionary(file_path):
         file.write("}\n")
 
     print(f"DicomDictionary has been updated successfully in {file_path}.")
-    
+
+
 import os
 
 # def delete_csv_files(root_folder):
@@ -1410,7 +1421,6 @@ import os
 #                     print(f"Failed to delete {file_path}: {e}")
 
 #     return deleted_files
-
 
 
 # def delete_csv_files(root_folder):
@@ -1443,6 +1453,7 @@ import os
 #                     print(f"Skipped (no 'Cirrus' parent): {os.path.join(dirpath, filename)}")
 
 #     return deleted_files
+
 
 def check_critical_info_from_files_in_folder(folder):
     """
@@ -1492,15 +1503,16 @@ import pydicom
 
 
 def replace_last_three(path, a, b, c):
-    filename = path.split("/")[-1]
+    filename = os.path.basename(path)
     parts = filename.split(".")
     parts[-3:] = [a, b, c]
     new_filename = ".".join(parts)
-    directory = "/".join(path.split("/")[:-1])
-    return f"{directory}/{new_filename}"
+    directory = os.path.dirname(path)
+    return os.path.join(directory, new_filename)
 
 
 # for i in [file11, file22, file33, file44]:  # , b, c, d, e, f
+
 
 def get_protocol_updated(i):
     main = i
@@ -1510,7 +1522,10 @@ def get_protocol_updated(i):
     make_unknown = False
 
     # --- Check 1
-    if "maestro2_3d_wide_oct" in protocol and len(ds.PrimaryAnatomicStructureSequence) == 1:
+    if (
+        "maestro2_3d_wide_oct" in protocol
+        and len(ds.PrimaryAnatomicStructureSequence) == 1
+    ):
         make_unknown = True
 
     # --- Check 2 d
@@ -1521,11 +1536,17 @@ def get_protocol_updated(i):
         make_unknown = True
 
     # --- Check 3
-    if "triton_3d_radial_oct" in protocol and len(ds.PrimaryAnatomicStructureSequence) == 1:
+    if (
+        "triton_3d_radial_oct" in protocol
+        and len(ds.PrimaryAnatomicStructureSequence) == 1
+    ):
         make_unknown = True
 
     # --- Check 4
-    if "triton_3d_radial_oct" in protocol and ds.get("LossyImageCompressionRatio") is None:
+    if (
+        "triton_3d_radial_oct" in protocol
+        and ds.get("LossyImageCompressionRatio") is None
+    ):
         make_unknown = True
 
     # --- Check 5
