@@ -95,8 +95,8 @@ def main():
     """
     # Example paths - replace with your actual paths or use command-line arguments
     home_folder = os.path.expanduser("~")
-    download_data_folder = os.path.join(home_folder, "Downloads", "year3+pre")
-    output_data_folder = os.path.join(home_folder, "Downloads", "year3+processed")
+    download_data_folder = os.path.join(home_folder, "Downloads", "adrc_pre")
+    output_data_folder = os.path.join(home_folder, "Downloads", "adrc_processed")
     input_triton_folder = os.path.join(download_data_folder, "triton")
     output_triton_folder = os.path.join(output_data_folder, "triton")
     input_maestro2_folder = os.path.join(download_data_folder, "maestro2")
