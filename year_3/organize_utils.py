@@ -459,7 +459,7 @@ def clean_filename(filename):
 import shutil
 
 
-def merge_folders_filter_id_files(patientid_csv, sources, destination, remove_txt):
+def merge_folders_filter_id_files(patientid_csv, sources, destination, remove_txt, skip_patient_id_check=False):
     """
     Merge files from the source directories into the destination directory
     based on a list of unique study IDs and an optional list of files to exclude by base name.
@@ -470,6 +470,7 @@ def merge_folders_filter_id_files(patientid_csv, sources, destination, remove_tx
     - destination (str): Path to the destination directory.
     - remove_txt (str): Path to the text file that contains the list of base filenames (without extension)
                         that need to be excluded.
+    - skip_patient_id_check (bool): If True, skip the check for patient IDs.
     """
 
     # Read the files to be removed from the remove_txt file
@@ -478,9 +479,12 @@ def merge_folders_filter_id_files(patientid_csv, sources, destination, remove_tx
         files_to_remove = [line.strip() for line in file]
 
     # Read the CSV and get the list of unique study IDs
-    unique_study_ids_list = (
-        pd.read_csv(patientid_csv)["Participant ID"].astype(str).unique().tolist()
-    )
+    if not skip_patient_id_check:
+        unique_study_ids_list = (
+            pd.read_csv(patientid_csv)["Participant ID"].astype(str).unique().tolist()
+        )
+    else:
+        unique_study_ids_list = []
 
     # Convert the files_to_remove list to a set for faster lookup
     files_to_remove_set = set(files_to_remove)
@@ -512,7 +516,7 @@ def merge_folders_filter_id_files(patientid_csv, sources, destination, remove_tx
                         for item in files_to_remove_set
                     )
 
-                    if file_id in unique_study_ids_list and not should_remove:
+                    if (skip_patient_id_check or file_id in unique_study_ids_list) and not should_remove:
                         valid_files.append(file)
                     else:
                         if should_remove:
