@@ -44,6 +44,38 @@ PROTOCOL_MAP = {
     ),
 }
 
+# (Modality, SeriesDescription) -> (anatomic_region, imaging_type) for manifest.tsv
+MANIFEST_META = {
+    ("OP", "FundusPhoto"): ("Macula", "Color Photography"),
+    ("OP", "IR"): ("Macula", "Infrared Reflectance"),
+    ("OP", "FAF"): ("Macula", "Fundus Autofluorescence"),
+    ("OPT", "OCT 3D H Macula"): ("Macula", "Optical Coherence Tomography"),
+    ("OPT", "OCT 3D H Wide"): ("Wide Field", "Optical Coherence Tomography"),
+    ("OPT", "OCT 3D H Disc"): ("Optic Disc", "Optical Coherence Tomography"),
+    ("OPT", "OCT 3D H External"): ("External", "Optical Coherence Tomography"),
+    ("OPTBSV", "OCTA Flow Volume Raw Data - for processing"): (
+        "Macula",
+        "Optical Coherence Tomography Angiography",
+    ),
+    ("OPTENF", "OCT Enface Image"): (
+        "Macula",
+        "Optical Coherence Tomography Angiography",
+    ),
+    ("SEG", "Retinal Layer(s) Segmentation"): ("Macula", "Retinal Layer Segmentation"),
+}
+
+MANIFEST_TSV_FIELDS = [
+    "person_id",
+    "manufacturer",
+    "manufacturers_model_name",
+    "laterality",
+    "anatomic_region",
+    "imaging",
+    "height",
+    "width",
+    "filepath",
+]
+
 
 def write_log(log_file_path, input_path, status, error_message=""):
     """Append a row to a CSV log, writing the header first if needed."""
@@ -98,8 +130,11 @@ def get_laterality(ds):
 
 
 def organize_file(file_path, output_folder, manifest_writer):
-    """Classify a single DICOM file and copy it into the final structure."""
+    """Classify a single DICOM file, copy it into the final structure, and return TSV record data."""
     ds = pydicom.dcmread(file_path, stop_before_pixels=True)
+
+    modality = str(ds.get("Modality", ""))
+    series_description = str(ds.get("SeriesDescription", ""))
 
     modality_folder, submodality_folder, protocol = classify_file(ds)
     patient_id = ds.get("PatientID") or "unknown"
@@ -129,8 +164,33 @@ def organize_file(file_path, output_folder, manifest_writer):
         }
     )
 
+    anatomic_region, imaging = MANIFEST_META.get((modality, series_description), ("", ""))
+    return modality_folder, {
+        "person_id": patient_id,
+        "manufacturer": str(ds.get("Manufacturer", "Topcon")).strip() or "Topcon",
+        "manufacturers_model_name": str(ds.get("ManufacturerModelName", "Maestro2")).strip() or "Maestro2",
+        "laterality": laterality.upper() if laterality != "unknown" else laterality,
+        "anatomic_region": anatomic_region,
+        "imaging": imaging,
+        "height": ds.get("Rows", ""),
+        "width": ds.get("Columns", ""),
+        "filepath": f"/{os.path.relpath(dest_path, output_folder)}",
+    }
 
-def main():
+
+def write_tsv_manifests(output_folder, records_by_modality):
+    """Write one manifest.tsv per modality folder containing all its records."""
+    for modality_folder, records in records_by_modality.items():
+        sorted_records = sorted(records, key=lambda r: r["person_id"])
+        manifest_path = os.path.join(output_folder, modality_folder, "manifest.tsv")
+        with open(manifest_path, "w", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=MANIFEST_TSV_FIELDS, delimiter="\t")
+            writer.writeheader()
+            writer.writerows(sorted_records)
+        print(f"Manifest written: {manifest_path}")
+
+
+def main(generate_manifest=True):
     input_folder = INPUT_FOLDER
     output_folder = OUTPUT_FOLDER
 
@@ -151,6 +211,8 @@ def main():
     ]
 
     print(f"Found {len(batch_folders)} batch folders in {input_folder}")
+
+    tsv_records: dict[str, list] = {}
 
     with open(manifest_path, "w", newline="") as manifest_file:
         manifest_fieldnames = [
@@ -175,11 +237,16 @@ def main():
 
             for file_path in files:
                 try:
-                    organize_file(file_path, output_folder, manifest_writer)
+                    modality_folder, tsv_record = organize_file(file_path, output_folder, manifest_writer)
+                    if generate_manifest:
+                        tsv_records.setdefault(modality_folder, []).append(tsv_record)
                 except Exception as e:
                     write_log(log_path, file_path, "FAILURE", str(e))
 
     print(f"Done. Manifest written to {manifest_path}")
+
+    if generate_manifest and tsv_records:
+        write_tsv_manifests(output_folder, tsv_records)
 
 
 if __name__ == "__main__":
