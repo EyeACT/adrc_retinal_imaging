@@ -94,19 +94,19 @@ def main():
     Main function to parse command-line arguments and run the Topcon processing pipeline.
     """
     # Example paths - replace with your actual paths or use command-line arguments
-    home_folder = os.path.expanduser("~")
-    download_data_folder = os.path.join(home_folder, "Downloads", "adrc_pre")
-    output_data_folder = os.path.join(home_folder, "Downloads", "adrc_processed")
-    input_triton_folder = os.path.join(download_data_folder, "triton")
-    output_triton_folder = os.path.join(output_data_folder, "triton")
-    input_maestro2_folder = os.path.join(download_data_folder, "maestro2")
-    output_maestro2_folder = os.path.join(output_data_folder, "maestro2")
+    # home_folder = os.path.expanduser("~")
+    # download_data_folder = os.path.join(home_folder, "Downloads", "adrc_pre")
+    # output_data_folder = os.path.join(home_folder, "Downloads", "adrc_processed")
+    # input_triton_folder = os.path.join(download_data_folder, "triton")
+    # output_triton_folder = os.path.join(output_data_folder, "triton")
+    # input_maestro2_folder = os.path.join(download_data_folder, "maestro2")
+    # output_maestro2_folder = os.path.join(output_data_folder, "maestro2")
 
-    # drive_folder = "G:\\"
-    # input_triton_folder = os.path.join(drive_folder, "year3+raw", "triton")
-    # output_triton_folder = os.path.join(drive_folder, "year3+processed", "triton")
-    # input_maestro2_folder = os.path.join(drive_folder, "year3+raw", "maestro2")
-    # output_maestro2_folder = os.path.join(drive_folder, "year3+processed", "maestro2")
+    drive_folder = "D:\\"
+    input_triton_folder = os.path.join(drive_folder, "year3+pre", "triton")
+    output_triton_folder = os.path.join(drive_folder, "year3+processed", "triton")
+    input_maestro2_folder = os.path.join(drive_folder, "year3+pre", "maestro2")
+    output_maestro2_folder = os.path.join(drive_folder, "year3+processed", "maestro2")
 
     # 1. --- Argument Parsing ---
     # This section sets up how the script receives instructions from the command line.
