@@ -80,8 +80,8 @@ def split_by_subject(header, records):
     subject_idx = header.index("SUBJECTID")
     by_subject = defaultdict(list)
     for row in records:
-        subject = row[subject_idx].strip()
-        by_subject[subject].append(row)
+        if subject := row[subject_idx].strip():
+            by_subject[subject].append(row)
     return by_subject
 
 
