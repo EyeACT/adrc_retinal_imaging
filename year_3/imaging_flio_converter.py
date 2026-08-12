@@ -10,6 +10,7 @@ from bs4 import BeautifulSoup
 from flio_reader import get_array
 from pydicom.dataset import Dataset, FileMetaDataset
 from pydicom.uid import ImplicitVRLittleEndian
+from pydicom.uid import generate_uid
 
 irf_data = [
     {"flio_sn": "15352", "short_irf": "60", "long_irf": "55"},
@@ -1357,3 +1358,92 @@ def convert_dicom(input, output):
         }
 
         return dic
+
+
+def make_flio_dicom_adrc(folder_path, output):
+    """ADRC dedicated conversion function.
+
+    Locates .sdt and .html files directly, reuses core parsers, and generates dynamic DICOM UIDs.
+
+    Args:
+        folder_path (str): Directory containing Measurement.sdt and measurement_info.html
+        output (str): Base output directory
+
+    Returns:
+        dict: Conversion status and file path info
+    """
+    try:
+        inputsdt = None
+        inputhtml = None
+
+        # Find .sdt and .html directly within folder_path to prevent path duplication
+        for f in os.listdir(folder_path):
+            if f.endswith(".sdt"):
+                inputsdt = os.path.join(folder_path, f)
+            elif f.endswith(".html"):
+                inputhtml = os.path.join(folder_path, f)
+
+        if not inputsdt or not inputhtml:
+            return {
+                "PatientID": None,
+                "Error": f"Missing .sdt or html file in {folder_path}",
+            }
+
+        # 1. Reuse existing low-level functions to parse SDT and HTML
+        a, b = make_min_info_dicom_from_sdt(inputsdt)
+        dicom_info = extract_dicom_info_from_html(inputhtml)
+
+        # 2. Dynamically generate compliant UIDs
+        uid_short = generate_uid()
+        uid_long = generate_uid()
+
+        a.file_meta.MediaStorageSOPInstanceUID = uid_short
+        a.SOPInstanceUID = uid_short
+        a.StudyInstanceUID = generate_uid()
+        a.SeriesInstanceUID = generate_uid()
+        a.SynchronizationFrameOfReferenceUID = uid_short
+
+        b.file_meta.MediaStorageSOPInstanceUID = uid_long
+        b.SOPInstanceUID = uid_long
+        b.StudyInstanceUID = generate_uid()
+        b.SeriesInstanceUID = generate_uid()
+        b.SynchronizationFrameOfReferenceUID = uid_long
+
+        # 3. Construct ADRC-compliant output directory path
+        patientid = dicom_info["PatientID"]
+        laterality = dicom_info["Laterality"].lower()
+
+        patient_out_dir = os.path.join(
+            output,
+            "retinal_flio",
+            "flio_decay_cube",
+            "heidelberg_flio",
+            patientid,
+        )
+        os.makedirs(patient_out_dir, exist_ok=True)
+
+        short_output_path = os.path.join(
+            patient_out_dir,
+            f"{patientid}_flio_short_wavelength_{laterality}.dcm",
+        )
+        long_output_path = os.path.join(
+            patient_out_dir,
+            f"{patientid}_flio_long_wavelength_{laterality}.dcm",
+        )
+
+        # 4. Save DICOM files using existing helpers
+        short_add_html_sdt_info(a, inputsdt, dicom_info, short_output_path)
+        long_add_html_sdt_info(b, inputsdt, dicom_info, long_output_path)
+
+        return {
+            "PatientID": patientid,
+            "Laterality": dicom_info["Laterality"],
+            "ShortPath": short_output_path,
+            "LongPath": long_output_path,
+            "Rows": a.Rows,
+            "Cols": a.Columns,
+            "Error": None,
+        }
+
+    except Exception as e:
+        return {"PatientID": None, "Error": str(e)}
