@@ -1373,25 +1373,25 @@ def make_flio_dicom_adrc(folder_path, output):
         dict: Conversion status and file path info
     """
     try:
-        inputsdt = None
-        inputhtml = None
+        input_sdt = None
+        input_html = None
 
         # Find .sdt and .html directly within folder_path to prevent path duplication
         for f in os.listdir(folder_path):
             if f.endswith(".sdt"):
-                inputsdt = os.path.join(folder_path, f)
+                input_sdt = os.path.join(folder_path, f)
             elif f.endswith(".html"):
-                inputhtml = os.path.join(folder_path, f)
+                input_html = os.path.join(folder_path, f)
 
-        if not inputsdt or not inputhtml:
+        if not input_sdt or not input_html:
             return {
                 "PatientID": None,
                 "Error": f"Missing .sdt or html file in {folder_path}",
             }
 
         # 1. Reuse existing low-level functions to parse SDT and HTML
-        a, b = make_min_info_dicom_from_sdt(inputsdt)
-        dicom_info = extract_dicom_info_from_html(inputhtml)
+        a, b = make_min_info_dicom_from_sdt(input_sdt)
+        dicom_info = extract_dicom_info_from_html(input_html)
 
         # 2. Dynamically generate compliant UIDs
         uid_short = generate_uid()
@@ -1415,9 +1415,7 @@ def make_flio_dicom_adrc(folder_path, output):
 
         patient_out_dir = os.path.join(
             output,
-            "retinal_flio",
-            "flio_decay_cube",
-            "heidelberg_flio",
+            "flio",
             patientid,
         )
         os.makedirs(patient_out_dir, exist_ok=True)
@@ -1432,8 +1430,8 @@ def make_flio_dicom_adrc(folder_path, output):
         )
 
         # 4. Save DICOM files using existing helpers
-        short_add_html_sdt_info(a, inputsdt, dicom_info, short_output_path)
-        long_add_html_sdt_info(b, inputsdt, dicom_info, long_output_path)
+        short_add_html_sdt_info(a, input_sdt, dicom_info, short_output_path)
+        long_add_html_sdt_info(b, input_sdt, dicom_info, long_output_path)
 
         return {
             "PatientID": patientid,
