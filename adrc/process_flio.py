@@ -5,10 +5,12 @@ Directly calls `make_flio_dicom_adrc` from `imaging_flio_converter.py`
 without altering any existing AIREADI functions.
 """
 
-import argparse
+# import argparse
 import csv
 import os
 import sys
+from tqdm import tqdm
+import shutil
 
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 year_3_path = os.path.join(project_root, "year_3")
@@ -18,8 +20,7 @@ if project_root not in sys.path:
 if year_3_path not in sys.path:
     sys.path.insert(0, year_3_path)
 
-import year_3.imaging_flio_converter as flio_conv
-from tqdm import tqdm
+import year_3.imaging_flio_converter as flio_conv  # noqa: E402
 
 MANIFEST_TSV_FIELDS = [
     "person_id",
@@ -42,53 +43,56 @@ def write_tsv_manifest(output_folder, records):
 
     sorted_records = sorted(records, key=lambda r: r["person_id"])
     with open(manifest_path, "w", newline="") as f:
-        writer = csv.DictWriter(
-            f, fieldnames=MANIFEST_TSV_FIELDS, delimiter="\t"
-        )
+        writer = csv.DictWriter(f, fieldnames=MANIFEST_TSV_FIELDS, delimiter="\t")
         writer.writeheader()
         writer.writerows(sorted_records)
     print(f"Manifest written to {manifest_path}")
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Process raw FLIO for ADRC using dedicated helper function."
-    )
-    parser.add_argument(
-        "-i",
-        "--input-folder",
-        required=True,
-        help="Input folder containing raw FLIO scans",
-    )
-    parser.add_argument(
-        "-o",
-        "--output-folder",
-        required=True,
-        help="Output organized directory",
-    )
-    args = parser.parse_args()
+    # parser = argparse.ArgumentParser(
+    #     description="Process raw FLIO for ADRC using dedicated helper function."
+    # )
+    # parser.add_argument(
+    #     "-i",
+    #     "--input-folder",
+    #     required=True,
+    #     help="Input folder containing raw FLIO scans",
+    # )
+    # parser.add_argument(
+    #     "-o",
+    #     "--output-folder",
+    #     required=True,
+    #     help="Output organized directory",
+    # )
+    # args = parser.parse_args()
+
+    # input_folder = os.path.abspath(args.input_folder)
+    # output_folder = os.path.abspath(args.output_folder)
+
+    input_folder = "/Volumes/Crucial X10/adrc/raw/FLIO"
+    output_folder = "/Volumes/Crucial X10/adrc/processed/flio/organized"
+
+    # delete the output folder if it exists to ensure a clean start
+    if os.path.exists(output_folder):
+        shutil.rmtree(output_folder)
 
     # Scan for directories containing Measurement.sdt
     scan_folders = []
-    for root, _, files in os.walk(args.input_folder):
-        if "Measurement.sdt" in files:
-            scan_folders.append(root)
-
+    scan_folders.extend(
+        root for root, _, files in os.walk(input_folder) if "Measurement.sdt" in files
+    )
     print(f"Found {len(scan_folders)} FLIO scan folders.")
 
     all_manifest_records = []
 
     # Process each scan folder using the dedicated new converter function
     for scan_folder in tqdm(scan_folders, desc="Processing FLIO"):
-        res = flio_conv.make_flio_dicom_adrc(scan_folder, args.output_folder)
+        res = flio_conv.make_flio_dicom_adrc(scan_folder, output_folder)
 
         if res.get("Error") is None and res.get("PatientID"):
-            rel_short = "/" + os.path.relpath(
-                res["ShortPath"], args.output_folder
-            )
-            rel_long = "/" + os.path.relpath(
-                res["LongPath"], args.output_folder
-            )
+            rel_short = "/" + os.path.relpath(res["ShortPath"], output_folder)
+            rel_long = "/" + os.path.relpath(res["LongPath"], output_folder)
 
             all_manifest_records.extend(
                 [
@@ -118,7 +122,7 @@ def main():
             )
 
     if all_manifest_records:
-        write_tsv_manifest(args.output_folder, all_manifest_records)
+        write_tsv_manifest(output_folder, all_manifest_records)
 
     print("--- Finished ---")
 
