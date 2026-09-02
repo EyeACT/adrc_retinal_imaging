@@ -1409,23 +1409,30 @@ def make_flio_dicom_adrc(folder_path, output):
         b.SeriesInstanceUID = generate_uid()
         b.SynchronizationFrameOfReferenceUID = uid_long
 
-        # 3. Construct ADRC-compliant output directory path
+        # 3. Construct ADRC-compliant output directory path:
+        # <modality>/<submodality>/heidelberg_flio/<patient_id>/, matching the
+        # layout used by the other ADRC device pipelines.
         patientid = dicom_info["PatientID"]
         laterality = dicom_info["Laterality"].lower()
 
-        patient_out_dir = os.path.join(
-            output,
-            "flio",
-            patientid,
+        modality_folder = "retinal_flio"
+        device_folder = "heidelberg_flio"
+
+        short_out_dir = os.path.join(
+            output, modality_folder, "short_wavelength", device_folder, patientid
         )
-        os.makedirs(patient_out_dir, exist_ok=True)
+        long_out_dir = os.path.join(
+            output, modality_folder, "long_wavelength", device_folder, patientid
+        )
+        os.makedirs(short_out_dir, exist_ok=True)
+        os.makedirs(long_out_dir, exist_ok=True)
 
         short_output_path = os.path.join(
-            patient_out_dir,
+            short_out_dir,
             f"{patientid}_flio_short_wavelength_{laterality}.dcm",
         )
         long_output_path = os.path.join(
-            patient_out_dir,
+            long_out_dir,
             f"{patientid}_flio_long_wavelength_{laterality}.dcm",
         )
 
