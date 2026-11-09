@@ -22,3 +22,12 @@ xlsxwriter==3.2.5
 # jupyter
 jupyter
 ipython
+
+# Environment
+python-dotenv
+
+# Azure
+azure-functions
+azure-storage-blob
+azure-identity
+azure-storage-file-datalake
