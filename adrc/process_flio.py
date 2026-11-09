@@ -15,6 +15,7 @@ failure) is recorded in logs/organize_log.csv so failures can be audited.
 
 import csv
 import os
+import re
 import shutil
 import sys
 from datetime import datetime
@@ -31,8 +32,11 @@ if year_3_path not in sys.path:
 
 import year_3.imaging_flio_converter as flio_conv  # noqa: E402
 
-INPUT_FOLDER = "/Volumes/Crucial X10/adrc/raw/FLIO"
-OUTPUT_FOLDER = "/Volumes/Crucial X10/adrc/processed/flio/organized"
+INPUT_FOLDER = "/Volumes/overflow/adrc/raw/FLIO"
+OUTPUT_FOLDER = "/Volumes/overflow/adrc/processed/flio/organized"
+
+# Raw subject folders are named by ADRC subject ID, e.g. "301-1011".
+SUBJECT_ID_RE = re.compile(r"^\d{3}-\d{3,4}$")
 
 MANIFEST_TSV_FIELDS = [
     "person_id",
@@ -97,20 +101,33 @@ def main():
     os.makedirs(logs_folder, exist_ok=True)
     log_path = os.path.join(logs_folder, "organize_log.csv")
 
-    # Scan for directories containing Measurement.sdt
-    scan_folders = [
-        root for root, _, files in os.walk(input_folder) if "Measurement.sdt" in files
-    ]
+    # Each top-level folder is one subject (e.g. "301-1011"); its name is the
+    # fallback/cross-check for the subject ID in the scan's HTML.
+    scan_folders = []
+    for entry in sorted(os.listdir(input_folder)):
+        subject_dir = os.path.join(input_folder, entry)
+        if not os.path.isdir(subject_dir):
+            continue
+        if not SUBJECT_ID_RE.match(entry):
+            write_log(log_path, subject_dir, "SKIPPED", "Not a subject ID folder")
+            continue
+        for root, _, files in os.walk(subject_dir):
+            if "Measurement.sdt" in files:
+                scan_folders.append((entry, root))
     print(f"Found {len(scan_folders)} FLIO scan folders in {input_folder}")
 
     all_manifest_records = []
 
-    for scan_folder in tqdm(scan_folders, desc="Processing FLIO"):
-        res = flio_conv.make_flio_dicom_adrc(scan_folder, output_folder)
+    for subject_id, scan_folder in tqdm(scan_folders, desc="Processing FLIO"):
+        res = flio_conv.make_flio_dicom_adrc(scan_folder, output_folder, subject_id)
 
         if res.get("Error") is not None or not res.get("PatientID"):
-            write_log(log_path, scan_folder, "FAILURE", res.get("Error", "Unknown error"))
+            write_log(
+                log_path, scan_folder, "FAILURE", res.get("Error") or "Unknown error"
+            )
             continue
+
+        write_log(log_path, scan_folder, "SUCCESS", res.get("Warning") or "")
 
         rel_short = "/" + os.path.relpath(res["ShortPath"], output_folder)
         rel_long = "/" + os.path.relpath(res["LongPath"], output_folder)

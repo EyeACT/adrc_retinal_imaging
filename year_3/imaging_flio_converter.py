@@ -1360,7 +1360,7 @@ def convert_dicom(input, output):
         return dic
 
 
-def make_flio_dicom_adrc(folder_path, output):
+def make_flio_dicom_adrc(folder_path, output, patient_id):
     """ADRC dedicated conversion function.
 
     Locates .sdt and .html files directly, reuses core parsers, and generates dynamic DICOM UIDs.
@@ -1368,6 +1368,11 @@ def make_flio_dicom_adrc(folder_path, output):
     Args:
         folder_path (str): Directory containing Measurement.sdt and measurement_info.html
         output (str): Base output directory
+        patient_id (str): ADRC subject ID (e.g. "301-1011") from the raw
+            subject folder name. The ID written in the HTML name field
+            ("ADRC, 301-1011") is preferred; it must match this value, and this
+            value is used only when the HTML has no ID (a few scans have free
+            text like "ADRC, J" there). The AI-READI 4-digit parser is not used.
 
     Returns:
         dict: Conversion status and file path info
@@ -1392,6 +1397,23 @@ def make_flio_dicom_adrc(folder_path, output):
         # 1. Reuse existing low-level functions to parse SDT and HTML
         a, b = make_min_info_dicom_from_sdt(input_sdt)
         dicom_info = extract_dicom_info_from_html(input_html)
+        # Prefer the full ADRC ID from the HTML; fall back to the folder name.
+        with open(input_html, "r") as f:
+            html_text = BeautifulSoup(f.read(), "html.parser").get_text()
+        html_ids = set(re.findall(r"\b\d{3}-\d{3,4}\b", html_text))
+        warning = None
+        if len(html_ids) > 1:
+            raise ValueError(f"Multiple subject IDs in HTML: {sorted(html_ids)}")
+        if html_ids:
+            html_id = html_ids.pop()
+            if html_id != patient_id:
+                raise ValueError(
+                    f"HTML subject ID {html_id} does not match folder {patient_id}"
+                )
+        else:
+            warning = "No subject ID in HTML; used folder name"
+        # Override the 4-digit AI-READI ID so the DICOM PatientID tag is correct.
+        dicom_info["PatientID"] = patient_id
 
         # 2. Dynamically generate compliant UIDs
         uid_short = generate_uid()
@@ -1427,14 +1449,20 @@ def make_flio_dicom_adrc(folder_path, output):
         os.makedirs(short_out_dir, exist_ok=True)
         os.makedirs(long_out_dir, exist_ok=True)
 
+        # Include acquisition date/time so repeat scans of the same eye don't
+        # overwrite each other.
+        acquired = f"{dicom_info['ContentDate']}_{dicom_info['ContentTime'][:6]}"
         short_output_path = os.path.join(
             short_out_dir,
-            f"{patientid}_flio_short_wavelength_{laterality}.dcm",
+            f"{patientid}_flio_short_wavelength_{laterality}_{acquired}.dcm",
         )
         long_output_path = os.path.join(
             long_out_dir,
-            f"{patientid}_flio_long_wavelength_{laterality}.dcm",
+            f"{patientid}_flio_long_wavelength_{laterality}_{acquired}.dcm",
         )
+        for path in (short_output_path, long_output_path):
+            if os.path.exists(path):
+                raise FileExistsError(f"Output already exists: {path}")
 
         # 4. Save DICOM files using existing helpers
         short_add_html_sdt_info(a, input_sdt, dicom_info, short_output_path)
@@ -1447,6 +1475,7 @@ def make_flio_dicom_adrc(folder_path, output):
             "LongPath": long_output_path,
             "Rows": a.Rows,
             "Cols": a.Columns,
+            "Warning": warning,
             "Error": None,
         }
 
