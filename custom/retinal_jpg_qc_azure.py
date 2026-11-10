@@ -1,11 +1,17 @@
 """Convert every DICOM under an Azure Data Lake folder to JPEG for visual QC.
 
 Walks the input folder recursively, downloads each .dcm file, converts it to a
-JPEG, and uploads it to the output folder with the same relative path plus a
-.jpg suffix. Both folders live in the same container.
+JPEG, and uploads it to the output folder. Both folders live in the same
+container.
 
-    input:  <input_folder>/a/b/file.dcm
-    output: <output_folder>/a/b/file.dcm.jpg
+The input is laid out as <modality>/<submodality>/<device>/<patient_id>/...
+To make review easier, every participant for a given modality/submodality/device
+lands in one flat folder. The first GROUP_DEPTH path components are kept as
+folders; everything below is joined with "-" into the file name, so the
+original path stays readable and names cannot collide.
+
+    input:  <input_folder>/modality/submodality/device/1001/file.dcm
+    output: <output_folder>/modality/submodality/device/1001-file.dcm.jpg
 
 A status CSV listing every file and any error is uploaded to
 <output_folder>/_qc_status_<timestamp>.csv.
@@ -36,6 +42,9 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config  # noqa: E402
 
 JPEG_QUALITY = 90
+
+# Number of leading path components (modality/submodality/device) kept as folders
+GROUP_DEPTH = 3
 
 thread_local = threading.local()
 
@@ -120,7 +129,12 @@ def dicom_bytes_to_jpg_bytes(dicom_bytes: bytes) -> bytes:
 
 def output_path_for(input_path: str, input_folder: str, output_folder: str) -> str:
     relative_path = input_path[len(input_folder) :].lstrip("/")
-    return f"{output_folder}/{relative_path}.jpg"
+    parts = relative_path.split("/")
+
+    group = parts[: min(GROUP_DEPTH, len(parts) - 1)]
+    file_name = "-".join(parts[len(group) :])
+
+    return "/".join([output_folder, *group, f"{file_name}.jpg"])
 
 
 def process_file(container, input_folder, output_folder, file_item):
@@ -136,9 +150,7 @@ def process_file(container, input_folder, output_folder, file_item):
 
     try:
         dicom_bytes = (
-            file_system_client.get_file_client(file_path=path)
-            .download_file()
-            .readall()
+            file_system_client.get_file_client(file_path=path).download_file().readall()
         )
 
         jpg_bytes = dicom_bytes_to_jpg_bytes(dicom_bytes)
@@ -234,7 +246,7 @@ if __name__ == "__main__":
     CONTAINER = "adrc"
     INPUT_FOLDER = "organized/"
     OUTPUT_FOLDER = "JPG_QC/"
-    WORKERS = 8
+    WORKERS = 16
     CLEAN_OUTPUT = False  # True deletes OUTPUT_FOLDER before starting
 
     pipeline(CONTAINER, INPUT_FOLDER, OUTPUT_FOLDER, WORKERS, CLEAN_OUTPUT)
